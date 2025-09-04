@@ -5,7 +5,7 @@
 @section('page-title', 'Dashboard')
 
 @section('breadcrumbs')
-<li class="breadcrumb-item active">Dashboard</li>
+<li class="breadcrumb-item active"></li>
 @endsection
 
 @section('content')
@@ -20,13 +20,7 @@
                             <i class="fas fa-user-circle mr-2 text-primary"></i>
                             ¡Bienvenido, {{ $usuario->nombre_completo }}!
                         </h4>
-                        <p class="card-text text-muted mb-0">
-                            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-link p-0 text-muted" style="text-decoration: none;">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-                                </button>
-                            </form>
+                        <p class="card-text text-muted mb-0">                          
                         </p>
                         @if($ultimoLogin)
                         <p class="card-text text-muted mb-0">
@@ -37,12 +31,14 @@
                     </div>
                     <div class="col-md-4 text-right">
                         <div class="btn-group" role="group">
-                            <a href="{{ route('perfil') }}" class="btn btn-outline-primary">
-                                <i class="fas fa-user-edit mr-1"></i> Mi Perfil
-                            </a>
-                            <a href="{{ url('configuracion') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-cogs mr-1"></i> Configuración
-                            </a>
+                            <p class="card-text text-muted mb-0">
+                                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-link p-0 text-muted" style="text-decoration: none;">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                                    </button>
+                                </form>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -271,67 +267,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row text-center mt-2">
-                        <div class="col-12">
-                            <small class="text-muted">
-                                <i class="fas fa-user-plus mr-1"></i>
-                                <span id="usuariosRecientes">0</span> creados este mes
-                            </small>
-                        </div>
-                    </div>
                 </div>
                 @endif
             </div>
         </div>
 
-        <!-- Información del sistema -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    Información del Sistema
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-12">
-                        <small class="text-muted">
-                            <i class="fas fa-server mr-2"></i>
-                            <strong>Versión:</strong> 1.0.0
-                        </small>
-                    </div>
-                    <div class="col-12 mt-1">
-                        <small class="text-muted">
-                            <i class="fas fa-shield-alt mr-2"></i>
-                            <strong>Seguridad:</strong> SSL/TLS
-                        </small>
-                    </div>
-                    <div class="col-12 mt-1">
-                        <small class="text-muted">
-                            <i class="fas fa-database mr-2"></i>
-                            <strong>BD:</strong> MySQL
-                        </small>
-                    </div>
-                    <div class="col-12 mt-1">
-                        <small class="text-muted">
-                            <i class="fas fa-user-shield mr-2"></i>
-                            <strong>Sus permisos:</strong> {{ count($permisos) }}
-                        </small>
-                    </div>
-                    <div class="col-12 mt-2">
-                        <small class="text-muted">
-                            <i class="fas fa-user mr-2"></i>
-                            <strong>Rol:</strong> 
-                            @if($usuario->rol)
-                                <span class="badge badge-primary badge-sm">{{ $usuario->rol->descripcion }}</span>
-                            @else
-                                <span class="badge badge-secondary badge-sm">Sin rol</span>
-                            @endif
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @endsection

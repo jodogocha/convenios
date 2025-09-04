@@ -152,7 +152,7 @@
         <div class="card">
             <div class="card-header">
                 <div class="login-logo">
-                    <i class="fas fa-handshake"></i>
+                    <i class="fas fa-handshake fa-3x"></i>
                 </div>
                 <h1 class="login-title">Sistema de Convenios</h1>
                 <p class="login-subtitle">Ingrese sus credenciales para acceder</p>
@@ -259,7 +259,7 @@
                     <div class="row">
                         <div class="col-12">
                             <a href="#" class="text-muted">
-                                <i class="fas fa-question-circle mr-1"></i>¿Olvidó su contraseña?
+                                
                             </a>
                         </div>
                     </div>
@@ -274,20 +274,6 @@
                     <small>
                         <i class="fas fa-shield-alt mr-1"></i>
                         Sistema seguro con auditoría completa
-                    </small>
-                </div>
-            </div>
-            <div class="row mt-2 text-center">
-                <div class="col-6">
-                    <small>
-                        <i class="fas fa-clock mr-1"></i>
-                        Sesión: 8 horas
-                    </small>
-                </div>
-                <div class="col-6">
-                    <small>
-                        <i class="fas fa-code mr-1"></i>
-                        Versión 1.0.0
                     </small>
                 </div>
             </div>
