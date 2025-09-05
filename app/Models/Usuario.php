@@ -9,23 +9,15 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
-use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
-use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditingTrait;
 
-class Usuario extends Authenticatable implements AuditableContract
+class Usuario extends Authenticatable implements Auditable
 {
-    use HasApiTokens, HasFactory, Notifiable, AuditableTrait;
+    use HasApiTokens, HasFactory, Notifiable, AuditingTrait;
 
     protected $table = 'usuarios';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'username',
         'email',
@@ -45,29 +37,13 @@ class Usuario extends Authenticatable implements AuditableContract
         'ultima_sesion',
         'ip_ultima_sesion',
     ];
-
-    // EXCLUIR campos sensibles o ruidosos del log
-    protected $auditExclude = [
-        'password',
-        'remember_token',
-        'updated_at',
-    ];
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
+    
     protected $hidden = [
         'password',
         'remember_token',
         'token_recuperacion',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verificado' => 'boolean',
         'activo' => 'boolean',
@@ -80,71 +56,80 @@ class Usuario extends Authenticatable implements AuditableContract
         'intentos_fallidos' => 'integer',
     ];
 
-    /**
-     * Relación con el rol
-     */
+    // Configuración de auditoría
+    protected $auditInclude = [
+        'username',
+        'email', 
+        'nombre',
+        'apellido',
+        'telefono',
+        'rol_id',
+        'activo',
+    ];
+
+    protected $auditExclude = [
+        'password',
+        'remember_token',
+        'token_recuperacion',
+        'ultima_sesion',
+        'ip_ultima_sesion',
+        'intentos_fallidos',
+        'bloqueado_hasta',
+    ];
+
+    // Implementación requerida del contrato Auditable
+    public function audits(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\OwenIt\Auditing\Models\Audit::class, 'auditable');
+    }
+
     public function rol(): BelongsTo
     {
         return $this->belongsTo(Rol::class, 'rol_id');
     }
 
-    /**
-     * Relación con auditoría
-     */
     public function auditorias(): HasMany
     {
         return $this->hasMany(Auditoria::class, 'usuario_id');
     }
 
-    /**
-     * Relación con intentos de login
-     */
     public function intentosLogin(): HasMany
     {
         return $this->hasMany(IntentoLogin::class, 'email_o_username', 'email');
     }
 
-    /**
-     * Verificar si el usuario está bloqueado
-     */
     public function estaBloqueado(): bool
     {
         return $this->bloqueado_hasta && $this->bloqueado_hasta > now();
     }
 
-    /**
-     * Verificar si el usuario tiene un permiso específico
-     */
     public function tienePermiso(string $permiso): bool
     {
+        if (!$this->rol) {
+            return false;
+        }
         return $this->rol->permisos->contains('nombre', $permiso);
     }
 
-    /**
-     * Verificar si el usuario tiene un rol específico
-     */
     public function tieneRol(string $rol): bool
     {
+        if (!$this->rol) {
+            return false;
+        }
         return $this->rol->nombre === $rol;
     }
 
-    /**
-     * Obtener el nombre completo del usuario
-     */
     public function getNombreCompletoAttribute(): string
     {
         return "{$this->nombre} {$this->apellido}";
     }
 
-    /**
-     * Incrementar intentos fallidos
-     */
     public function incrementarIntentosFallidos(): void
     {
         $this->increment('intentos_fallidos');
         
-        $maxIntentos = ConfiguracionSistema::obtenerValor('max_intentos_login', 5);
-        $tiempoBloqueo = ConfiguracionSistema::obtenerValor('tiempo_bloqueo_minutos', 30);
+        $maxIntentos = \App\Models\ConfiguracionSistema::obtenerValor('max_intentos_login', 5);
+        $tiempoBloqueo = \App\Models\ConfiguracionSistema::obtenerValor('tiempo_bloqueo_minutos', 30);
         
         if ($this->intentos_fallidos >= $maxIntentos) {
             $this->update([
@@ -153,9 +138,6 @@ class Usuario extends Authenticatable implements AuditableContract
         }
     }
 
-    /**
-     * Resetear intentos fallidos
-     */
     public function resetearIntentosFallidos(): void
     {
         $this->update([
@@ -164,9 +146,6 @@ class Usuario extends Authenticatable implements AuditableContract
         ]);
     }
 
-    /**
-     * Actualizar última sesión
-     */
     public function actualizarUltimaSesion(): void
     {
         $this->update([
@@ -175,17 +154,11 @@ class Usuario extends Authenticatable implements AuditableContract
         ]);
     }
 
-    /**
-     * Scope para usuarios activos
-     */
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
     }
 
-    /**
-     * Scope para usuarios no bloqueados
-     */
     public function scopeNoBloqueados($query)
     {
         return $query->where(function ($q) {
@@ -194,9 +167,6 @@ class Usuario extends Authenticatable implements AuditableContract
         });
     }
 
-    /**
-     * Scope para buscar usuarios
-     */
     public function scopeBuscar($query, $termino)
     {
         return $query->where(function ($q) use ($termino) {
@@ -208,29 +178,22 @@ class Usuario extends Authenticatable implements AuditableContract
     }
 
     /**
-     * Boot del modelo para eventos
+     * Generar etiquetas personalizadas para auditoría
      */
-    protected static function boot()
+    public function generateTags(): array
     {
-        parent::boot();
+        return [
+            'usuario:' . $this->username,
+            'email:' . $this->email,
+            'rol:' . ($this->rol ? $this->rol->nombre : 'sin_rol'),
+        ];
+    }
 
-        // Evento al crear usuario
-        static::created(function ($usuario) {
-            Auditoria::registrar($usuario->id, 'crear_usuario', 'usuarios', $usuario->id, null, [
-                'username' => $usuario->username,
-                'email' => $usuario->email,
-                'rol_id' => $usuario->rol_id,
-            ]);
-        });
-
-        // Evento al actualizar usuario
-        static::updated(function ($usuario) {
-            if ($usuario->isDirty()) {
-                $cambios = $usuario->getDirty();
-                $original = $usuario->getOriginal();
-                
-                Auditoria::registrar($usuario->id, 'actualizar_usuario', 'usuarios', $usuario->id, $original, $cambios);
-            }
-        });
+    /**
+     * Obtener el usuario responsable de la auditoría
+     */
+    public function resolveUser(): ?\Illuminate\Contracts\Auth\Authenticatable
+    {
+        return auth()->user();
     }
 }

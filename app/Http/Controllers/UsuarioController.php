@@ -15,7 +15,6 @@ class UsuarioController extends Controller
     {
         $this->middleware('auth');
         // El middleware CheckRole ya está aplicado en las rutas
-        // No necesitamos middleware adicional aquí ya que las rutas están protegidas
     }
 
     /**
@@ -32,7 +31,7 @@ class UsuarioController extends Controller
                 $q->where('nombre', 'LIKE', "%{$buscar}%")
                   ->orWhere('apellido', 'LIKE', "%{$buscar}%")
                   ->orWhere('email', 'LIKE', "%{$buscar}%")
-                  ->orWhere('usuario', 'LIKE', "%{$buscar}%");
+                  ->orWhere('username', 'LIKE', "%{$buscar}%");
             });
         }
 
@@ -107,7 +106,6 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
-        $usuario->load('audits.user'); // trae el historial + quién hizo cada cambio
         return view('usuarios.show', compact('usuario'));
     }
 
@@ -129,7 +127,7 @@ class UsuarioController extends Controller
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'email' => ['required', 'email', Rule::unique('usuarios')->ignore($usuario->id)],
-            'usuario' => ['required', 'string', 'max:50', Rule::unique('usuarios')->ignore($usuario->id)],
+            'usuario' => ['required', 'string', 'max:50', Rule::unique('usuarios', 'username')->ignore($usuario->id)],
             'password' => 'nullable|string|min:8|confirmed',
             'rol_id' => 'required|exists:roles,id',
             'telefono' => 'nullable|string|max:20',
@@ -151,7 +149,7 @@ class UsuarioController extends Controller
             'nombre' => $request->nombre,
             'apellido' => $request->apellido,
             'email' => $request->email,
-            'usuario' => $request->usuario,
+            'username' => $request->usuario,
             'rol_id' => $request->rol_id,
             'telefono' => $request->telefono,
             'activo' => $request->has('activo'),
@@ -179,10 +177,10 @@ class UsuarioController extends Controller
                            ->with('error', 'No puedes eliminar tu propio usuario');
         }
 
-        // Prevenir eliminación de usuarios con rol de administrador
-        if ($usuario->rol && $usuario->rol->nombre === 'administrador') {
+        // Prevenir eliminación de usuarios con rol de super_admin
+        if ($usuario->rol && $usuario->rol->nombre === 'super_admin') {
             return redirect()->route('usuarios.index')
-                           ->with('error', 'No se puede eliminar un usuario administrador');
+                           ->with('error', 'No se puede eliminar un usuario super administrador');
         }
 
         $usuario->delete();
@@ -196,6 +194,15 @@ class UsuarioController extends Controller
      */
     public function toggleEstado(Usuario $usuario)
     {
+        // Verificar permisos
+        if (!Auth::user()->tieneRol('admin') && !Auth::user()->tieneRol('super_admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para cambiar el estado de usuarios'
+            ], 403);
+        }
+
+        // No puede desactivar su propio usuario
         if ($usuario->id === Auth::id()) {
             return response()->json([
                 'success' => false,
@@ -203,9 +210,9 @@ class UsuarioController extends Controller
             ], 400);
         }
 
+        // Cambiar estado
         $usuario->update([
-            'activo' => !$usuario->activo,
-            'editado_por' => Auth::id()
+            'activo' => !$usuario->activo
         ]);
 
         return response()->json([

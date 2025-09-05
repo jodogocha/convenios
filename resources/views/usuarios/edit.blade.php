@@ -110,7 +110,7 @@
                                        class="form-control @error('usuario') is-invalid @enderror" 
                                        id="usuario" 
                                        name="usuario" 
-                                       value="{{ old('usuario', $usuario->usuario) }}" 
+                                       value="{{ old('usuario', $usuario->username) }}" 
                                        required
                                        maxlength="50"
                                        placeholder="nombreusuario">
@@ -274,27 +274,21 @@
                                         <small>
                                             <strong>Creado:</strong> 
                                             {{ $usuario->created_at ? $usuario->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
-                                            @if($usuario->creador)
-                                                por {{ $usuario->creador->nombre_completo }}
-                                            @endif
                                         </small>
                                     </div>
                                     <div class="col-md-6">
                                         <small>
                                             <strong>Última modificación:</strong> 
                                             {{ $usuario->updated_at ? $usuario->updated_at->format('d/m/Y H:i:s') : 'No disponible' }}
-                                            @if($usuario->editor)
-                                                por {{ $usuario->editor->nombre_completo }}
-                                            @endif
                                         </small>
                                     </div>
                                 </div>
-                                @if($usuario->ultimo_login)
+                                @if($usuario->ultima_sesion)
                                 <div class="row mt-1">
                                     <div class="col-md-6">
                                         <small>
                                             <strong>Último acceso:</strong> 
-                                            {{ $usuario->ultimo_login->format('d/m/Y H:i:s') }}
+                                            {{ $usuario->ultima_sesion->format('d/m/Y H:i:s') }}
                                         </small>
                                     </div>
                                 </div>

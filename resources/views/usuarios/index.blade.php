@@ -77,7 +77,8 @@
                     Lista de Usuarios ({{ $usuarios->total() }} registros)
                 </h3>
                 <div class="card-tools">
-                    @if(Auth::user()->tienePermiso('usuarios.crear'))
+                    {{-- Solo admin y super_admin pueden crear usuarios --}}
+                    @if(Auth::user()->tieneRol('admin') || Auth::user()->tieneRol('super_admin'))
                     <a href="{{ route('usuarios.create') }}" class="btn btn-success btn-sm">
                         <i class="fas fa-plus mr-1"></i>
                         Nuevo Usuario
@@ -98,7 +99,7 @@
                                 <th>Teléfono</th>
                                 <th>Estado</th>
                                 <th>Último Login</th>
-                                <th width="120">Acciones</th>
+                                <th width="150">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -118,7 +119,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-monospace">{{ $usuario->usuario }}</span>
+                                    <span class="text-monospace">{{ $usuario->username }}</span>
                                 </td>
                                 <td>{{ $usuario->email }}</td>
                                 <td>
@@ -130,23 +131,33 @@
                                 </td>
                                 <td>{{ $usuario->telefono ?? '-' }}</td>
                                 <td>
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" 
-                                               class="custom-control-input toggle-estado" 
-                                               id="estado{{ $usuario->id }}"
-                                               data-id="{{ $usuario->id }}"
-                                               {{ $usuario->activo ? 'checked' : '' }}
-                                               {{ $usuario->id === Auth::id() || !(Auth::user()->tieneRol('admin') || Auth::user()->tieneRol('super_admin')) ? 'disabled' : '' }}>
-                                        <label class="custom-control-label" 
-                                               for="estado{{ $usuario->id }}">
-                                            {{ $usuario->activo ? 'Activo' : 'Inactivo' }}
-                                        </label>
-                                    </div>
+                                    @if(Auth::user()->tieneRol('admin') || Auth::user()->tieneRol('super_admin'))
+                                        {{-- Solo admin y super_admin pueden cambiar estados --}}
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" 
+                                                   class="custom-control-input toggle-estado" 
+                                                   id="estado{{ $usuario->id }}"
+                                                   data-id="{{ $usuario->id }}"
+                                                   {{ $usuario->activo ? 'checked' : '' }}
+                                                   {{ $usuario->id === Auth::id() ? 'disabled' : '' }}>
+                                            <label class="custom-control-label" 
+                                                   for="estado{{ $usuario->id }}">
+                                                {{ $usuario->activo ? 'Activo' : 'Inactivo' }}
+                                            </label>
+                                        </div>
+                                    @else
+                                        {{-- Solo mostrar el estado para usuarios sin permisos de edición --}}
+                                        @if($usuario->activo)
+                                            <span class="badge badge-success">Activo</span>
+                                        @else
+                                            <span class="badge badge-danger">Inactivo</span>
+                                        @endif
+                                    @endif
                                 </td>
                                 <td>
-                                    @if($usuario->ultimo_login)
+                                    @if($usuario->ultima_sesion)
                                         <small class="text-muted">
-                                            {{ $usuario->ultimo_login->format('d/m/Y H:i') }}
+                                            {{ $usuario->ultima_sesion->format('d/m/Y H:i') }}
                                         </small>
                                     @else
                                         <small class="text-muted">Nunca</small>
@@ -154,21 +165,24 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
+                                        {{-- Ver detalles - todos pueden ver --}}
                                         <a href="{{ route('usuarios.show', $usuario) }}" 
                                            class="btn btn-info btn-sm" title="Ver detalles">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
-                                        @if(Auth::user()->tienePermiso('usuarios.editar'))
+                                        {{-- Editar - solo admin y super_admin --}}
+                                        @if(Auth::user()->tieneRol('admin') || Auth::user()->tieneRol('super_admin'))
                                         <a href="{{ route('usuarios.edit', $usuario) }}" 
                                            class="btn btn-warning btn-sm" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         @endif
 
-                                        @if(Auth::user()->tienePermiso('usuarios.eliminar') && 
+                                        {{-- Eliminar - solo super_admin y con restricciones --}}
+                                        @if(Auth::user()->tieneRol('super_admin') && 
                                             $usuario->id !== Auth::id() && 
-                                            (!$usuario->rol || $usuario->rol->nombre !== 'administrador'))
+                                            (!$usuario->rol || $usuario->rol->nombre !== 'super_admin'))
                                         <form method="POST" 
                                               action="{{ route('usuarios.destroy', $usuario) }}" 
                                               class="d-inline">
@@ -270,6 +284,27 @@ $(document).ready(function() {
             },
             complete: function() {
                 checkbox.prop('disabled', false);
+            }
+        });
+    });
+
+    // Confirmación para eliminaciones
+    $('.btn-delete').click(function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        
+        Swal.fire({
+            title: '¿Está seguro?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
             }
         });
     });
