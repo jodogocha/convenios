@@ -106,6 +106,14 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
+        // Cargar la relación de auditorías con el rol y permisos
+        $usuario->load([
+            'rol.permisos', 
+            'auditorias' => function($query) {
+                $query->orderBy('fecha_hora', 'desc')->limit(20);
+            }
+        ]);
+
         return view('usuarios.show', compact('usuario'));
     }
 

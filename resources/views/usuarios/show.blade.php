@@ -340,72 +340,72 @@
                 </h3>
                 <div class="card-tools">
                     <span class="badge badge-info">
-                        {{ $usuario->audits->count() }} cambios registrados
+                        {{ $usuario->auditorias ? $usuario->auditorias->count() : 0 }} cambios registrados
                     </span>
                 </div>
             </div>
             <div class="card-body">
-                @if($usuario->audits->count() > 0)
+                @if($usuario->auditorias && $usuario->auditorias->count() > 0)
                 <div class="timeline">
                     @php $lastDate = null; @endphp
-                    @foreach($usuario->audits->sortByDesc('created_at') as $audit)
+                    @foreach($usuario->auditorias->sortByDesc('fecha_hora') as $auditoria)
                         @php 
-                            $currentDate = $audit->created_at->format('Y-m-d');
+                            $currentDate = $auditoria->fecha_hora->format('Y-m-d');
                             $showDateLabel = $lastDate !== $currentDate;
                             $lastDate = $currentDate;
                         @endphp
                         
                         @if($showDateLabel)
                         <div class="time-label">
-                            <span class="{{ $audit->created_at->isToday() ? 'bg-primary' : ($audit->created_at->isYesterday() ? 'bg-info' : 'bg-secondary') }}">
-                                @if($audit->created_at->isToday())
+                            <span class="{{ $auditoria->fecha_hora->isToday() ? 'bg-primary' : ($auditoria->fecha_hora->isYesterday() ? 'bg-info' : 'bg-secondary') }}">
+                                @if($auditoria->fecha_hora->isToday())
                                     Hoy
-                                @elseif($audit->created_at->isYesterday())
+                                @elseif($auditoria->fecha_hora->isYesterday())
                                     Ayer
                                 @else
-                                    {{ $audit->created_at->format('d/m/Y') }}
+                                    {{ $auditoria->fecha_hora->format('d/m/Y') }}
                                 @endif
                             </span>
                         </div>
                         @endif
                         
                         <div>
-                            <i class="fas {{ $audit->event === 'created' ? 'fa-user-plus bg-green' : ($audit->event === 'updated' ? 'fa-edit bg-yellow' : 'fa-trash bg-red') }}"></i>
+                            <i class="fas {{ $auditoria->accion === 'crear_usuario' ? 'fa-user-plus bg-green' : ($auditoria->accion === 'actualizar_usuario' ? 'fa-edit bg-yellow' : 'fa-trash bg-red') }}"></i>
                             <div class="timeline-item">
                                 <span class="time">
                                     <i class="fas fa-clock mr-1"></i>
-                                    {{ $audit->created_at->format('H:i:s') }}
+                                    {{ $auditoria->fecha_hora->format('H:i:s') }}
                                 </span>
                                 <h3 class="timeline-header">
-                                    @switch($audit->event)
-                                        @case('created')
+                                    @switch($auditoria->accion)
+                                        @case('crear_usuario')
                                             <i class="fas fa-plus-circle text-success mr-1"></i>
                                             Usuario creado en el sistema
                                             @break
-                                        @case('updated')
+                                        @case('actualizar_usuario')
                                             <i class="fas fa-edit text-warning mr-1"></i>
                                             Información actualizada
                                             @break
-                                        @case('deleted')
+                                        @case('eliminar_usuario')
                                             <i class="fas fa-trash text-danger mr-1"></i>
                                             Usuario eliminado
                                             @break
                                         @default
-                                            {{ ucfirst($audit->event) }}
+                                            {{ $auditoria->descripcion_accion }}
                                     @endswitch
                                 </h3>
                                 <div class="timeline-body">
-                                    @if($audit->event === 'created')
+                                    @if($auditoria->accion === 'crear_usuario')
                                         <p>Usuario registrado exitosamente en el sistema.</p>
-                                        @if(!empty($audit->new_values))
+                                        @if($auditoria->valores_nuevos)
                                             <strong>Datos iniciales:</strong>
                                             <ul class="list-unstyled ml-3">
-                                                @foreach($audit->new_values as $key => $value)
+                                                @foreach($auditoria->valores_nuevos as $key => $value)
                                                     @if(in_array($key, ['username', 'email', 'nombre', 'apellido', 'rol_id', 'activo']))
                                                         <li>
                                                             <strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong> 
                                                             @if($key === 'rol_id')
-                                                                {{ \App\Models\Rol::find($value)->nombre ?? 'Rol eliminado' }}
+                                                                {{ \App\Models\Rol::find($value)->descripcion ?? 'Rol eliminado' }}
                                                             @elseif($key === 'activo')
                                                                 {{ $value ? 'Activo' : 'Inactivo' }}
                                                             @else
@@ -416,8 +416,8 @@
                                                 @endforeach
                                             </ul>
                                         @endif
-                                    @elseif($audit->event === 'updated')
-                                        @if(!empty($audit->old_values) && !empty($audit->new_values))
+                                    @elseif($auditoria->accion === 'actualizar_usuario')
+                                        @if($auditoria->valores_anteriores && $auditoria->valores_nuevos)
                                             <strong>Cambios realizados:</strong>
                                             <div class="table-responsive mt-2">
                                                 <table class="table table-sm table-bordered">
@@ -429,24 +429,24 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach($audit->new_values as $key => $newValue)
-                                                            @if(isset($audit->old_values[$key]) && in_array($key, ['username', 'email', 'nombre', 'apellido', 'telefono', 'rol_id', 'activo']))
+                                                        @foreach($auditoria->valores_nuevos as $key => $newValue)
+                                                            @if(isset($auditoria->valores_anteriores[$key]) && in_array($key, ['username', 'email', 'nombre', 'apellido', 'telefono', 'rol_id', 'activo']))
                                                                 <tr>
                                                                     <td><strong>{{ ucfirst(str_replace('_', ' ', $key)) }}</strong></td>
                                                                     <td>
                                                                         @if($key === 'rol_id')
-                                                                            {{ \App\Models\Rol::find($audit->old_values[$key])->nombre ?? 'Rol eliminado' }}
+                                                                            {{ \App\Models\Rol::find($auditoria->valores_anteriores[$key])->descripcion ?? 'Rol eliminado' }}
                                                                         @elseif($key === 'activo')
-                                                                            <span class="badge badge-{{ $audit->old_values[$key] ? 'success' : 'danger' }}">
-                                                                                {{ $audit->old_values[$key] ? 'Activo' : 'Inactivo' }}
+                                                                            <span class="badge badge-{{ $auditoria->valores_anteriores[$key] ? 'success' : 'danger' }}">
+                                                                                {{ $auditoria->valores_anteriores[$key] ? 'Activo' : 'Inactivo' }}
                                                                             </span>
                                                                         @else
-                                                                            {{ $audit->old_values[$key] ?: '(vacío)' }}
+                                                                            {{ $auditoria->valores_anteriores[$key] ?: '(vacío)' }}
                                                                         @endif
                                                                     </td>
                                                                     <td>
                                                                         @if($key === 'rol_id')
-                                                                            {{ \App\Models\Rol::find($newValue)->nombre ?? 'Rol eliminado' }}
+                                                                            {{ \App\Models\Rol::find($newValue)->descripcion ?? 'Rol eliminado' }}
                                                                         @elseif($key === 'activo')
                                                                             <span class="badge badge-{{ $newValue ? 'success' : 'danger' }}">
                                                                                 {{ $newValue ? 'Activo' : 'Inactivo' }}
@@ -469,11 +469,11 @@
                                     <div class="mt-2">
                                         <small class="text-muted">
                                             <i class="fas fa-user mr-1"></i>
-                                            Por: {{ $audit->user->nombre_completo ?? 'Sistema' }}
-                                            @if($audit->ip_address)
-                                                | <i class="fas fa-map-marker-alt mr-1"></i>IP: {{ $audit->ip_address }}
+                                            Por: {{ $auditoria->nombre_usuario }}
+                                            @if($auditoria->ip_address)
+                                                | <i class="fas fa-map-marker-alt mr-1"></i>IP: {{ $auditoria->ip_address }}
                                             @endif
-                                            | <i class="fas fa-clock mr-1"></i>{{ $audit->created_at->diffForHumans() }}
+                                            | <i class="fas fa-clock mr-1"></i>{{ $auditoria->fecha_hora->diffForHumans() }}
                                         </small>
                                     </div>
                                 </div>
@@ -498,10 +498,17 @@
                 </div>
                 @endif
             </div>
-            @if($usuario->audits->count() > 10)
+            @if($usuario->auditorias && $usuario->auditorias->count() > 10)
             <div class="card-footer text-center">
                 <small class="text-muted">
-                    Mostrando los últimos cambios. Total: {{ $usuario->audits->count() }} registros
+                    Mostrando los últimos cambios. 
+                    @if(Auth::user()->tieneRol('super_admin'))
+                        <a href="{{ route('auditoria.index', ['usuario_id' => $usuario->id]) }}" class="text-primary">
+                            Ver historial completo
+                        </a>
+                    @else
+                        Total: {{ $usuario->auditorias->count() }} registros
+                    @endif
                 </small>
             </div>
             @endif
