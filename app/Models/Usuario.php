@@ -9,12 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
-use OwenIt\Auditing\Contracts\Auditable;
-use OwenIt\Auditing\Auditable as AuditingTrait;
 
-class Usuario extends Authenticatable implements Auditable
+class Usuario extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, AuditingTrait;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'usuarios';
 
@@ -56,31 +54,28 @@ class Usuario extends Authenticatable implements Auditable
         'intentos_fallidos' => 'integer',
     ];
 
-    // Configuración de auditoría
-    protected $auditInclude = [
-        'username',
-        'email', 
-        'nombre',
-        'apellido',
-        'telefono',
-        'rol_id',
-        'activo',
-    ];
-
-    protected $auditExclude = [
-        'password',
-        'remember_token',
-        'token_recuperacion',
-        'ultima_sesion',
-        'ip_ultima_sesion',
-        'intentos_fallidos',
-        'bloqueado_hasta',
-    ];
-
-    // Implementación requerida del contrato Auditable
-    public function audits(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    // EVENTO: Registrar auditoría cuando se actualiza un usuario
+    protected static function boot()
     {
-        return $this->morphMany(\OwenIt\Auditing\Models\Audit::class, 'auditable');
+        parent::boot();
+
+        static::created(function ($usuario) {
+            Auditoria::registrarCambioUsuario('created', $usuario, null, $usuario->toArray());
+        });
+
+        static::updated(function ($usuario) {
+            $valoresOriginales = $usuario->getOriginal();
+            $valoresNuevos = $usuario->getChanges();
+            
+            // Solo registrar si hay cambios significativos
+            if (!empty($valoresNuevos) && count($valoresNuevos) > 1) { // Más que solo updated_at
+                Auditoria::registrarCambioUsuario('updated', $usuario, $valoresOriginales, $valoresNuevos);
+            }
+        });
+
+        static::deleted(function ($usuario) {
+            Auditoria::registrarCambioUsuario('deleted', $usuario, $usuario->toArray(), null);
+        });
     }
 
     public function rol(): BelongsTo
@@ -175,25 +170,5 @@ class Usuario extends Authenticatable implements Auditable
               ->orWhere('nombre', 'like', "%{$termino}%")
               ->orWhere('apellido', 'like', "%{$termino}%");
         });
-    }
-
-    /**
-     * Generar etiquetas personalizadas para auditoría
-     */
-    public function generateTags(): array
-    {
-        return [
-            'usuario:' . $this->username,
-            'email:' . $this->email,
-            'rol:' . ($this->rol ? $this->rol->nombre : 'sin_rol'),
-        ];
-    }
-
-    /**
-     * Obtener el usuario responsable de la auditoría
-     */
-    public function resolveUser(): ?\Illuminate\Contracts\Auth\Authenticatable
-    {
-        return auth()->user();
     }
 }

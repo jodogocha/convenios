@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use OwenIt\Auditing\Models\Audit;
+use App\Models\Auditoria;
 use App\Models\Usuario;
 
 class AuditoriaController extends Controller
@@ -20,42 +20,60 @@ class AuditoriaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Audit::with(['user', 'auditable'])
-            ->orderBy('created_at', 'desc');
+        $query = Auditoria::with('usuario')
+            ->orderBy('fecha_hora', 'desc');
 
         // Filtros
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->get('user_id'));
+        if ($request->filled('usuario_id')) {
+            $query->where('usuario_id', $request->get('usuario_id'));
         }
 
-        if ($request->filled('event')) {
-            $query->where('event', $request->get('event'));
+        if ($request->filled('accion')) {
+            $query->where('accion', $request->get('accion'));
         }
 
-        if ($request->filled('auditable_type')) {
-            $query->where('auditable_type', $request->get('auditable_type'));
+        if ($request->filled('tabla_afectada')) {
+            $query->where('tabla_afectada', $request->get('tabla_afectada'));
         }
 
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('created_at', '>=', $request->get('fecha_desde'));
+            $query->whereDate('fecha_hora', '>=', $request->get('fecha_desde'));
         }
 
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('created_at', '<=', $request->get('fecha_hasta'));
+            $query->whereDate('fecha_hora', '<=', $request->get('fecha_hasta'));
         }
 
         $auditorias = $query->paginate(20);
         $usuarios = Usuario::select('id', 'nombre', 'apellido', 'username')->get();
 
-        return view('admin.auditoria.index', compact('auditorias', 'usuarios'));
+        // Acciones disponibles para filtrar
+        $acciones = [
+            'login_exitoso' => 'Login exitoso',
+            'logout' => 'Logout',
+            'crear_usuario' => 'Crear usuario',
+            'actualizar_usuario' => 'Actualizar usuario',
+            'eliminar_usuario' => 'Eliminar usuario',
+            'cambio_password' => 'Cambio de contraseña',
+            'acceso_denegado' => 'Acceso denegado',
+        ];
+
+        // Tablas disponibles para filtrar
+        $tablas = [
+            'usuarios' => 'Usuarios',
+            'roles' => 'Roles',
+            'permisos' => 'Permisos',
+        ];
+
+        return view('admin.auditoria.index', compact('auditorias', 'usuarios', 'acciones', 'tablas'));
     }
 
     /**
      * Mostrar detalles de una auditoría específica
      */
-    public function show(Audit $auditoria)
+    public function show(Auditoria $auditoria)
     {
-        $auditoria->load(['user', 'auditable']);
+        $auditoria->load('usuario');
         return view('admin.auditoria.show', compact('auditoria'));
     }
 
@@ -64,28 +82,28 @@ class AuditoriaController extends Controller
      */
     public function export(Request $request)
     {
-        $query = Audit::with(['user', 'auditable'])
-            ->orderBy('created_at', 'desc');
+        $query = Auditoria::with('usuario')
+            ->orderBy('fecha_hora', 'desc');
 
         // Aplicar los mismos filtros que en index
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->get('user_id'));
+        if ($request->filled('usuario_id')) {
+            $query->where('usuario_id', $request->get('usuario_id'));
         }
 
-        if ($request->filled('event')) {
-            $query->where('event', $request->get('event'));
+        if ($request->filled('accion')) {
+            $query->where('accion', $request->get('accion'));
         }
 
-        if ($request->filled('auditable_type')) {
-            $query->where('auditable_type', $request->get('auditable_type'));
+        if ($request->filled('tabla_afectada')) {
+            $query->where('tabla_afectada', $request->get('tabla_afectada'));
         }
 
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('created_at', '>=', $request->get('fecha_desde'));
+            $query->whereDate('fecha_hora', '>=', $request->get('fecha_desde'));
         }
 
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('created_at', '<=', $request->get('fecha_hasta'));
+            $query->whereDate('fecha_hora', '<=', $request->get('fecha_hasta'));
         }
 
         $auditorias = $query->get();
@@ -110,8 +128,8 @@ class AuditoriaController extends Controller
             fputcsv($file, [
                 'ID',
                 'Usuario',
-                'Evento',
-                'Modelo',
+                'Acción',
+                'Tabla',
                 'ID del Registro',
                 'IP',
                 'Fecha y Hora',
@@ -120,11 +138,11 @@ class AuditoriaController extends Controller
 
             foreach ($auditorias as $auditoria) {
                 $cambios = '';
-                if ($auditoria->old_values && $auditoria->new_values) {
+                if ($auditoria->valores_anteriores && $auditoria->valores_nuevos) {
                     $cambiosArray = [];
-                    foreach ($auditoria->new_values as $key => $newValue) {
-                        if (isset($auditoria->old_values[$key])) {
-                            $cambiosArray[] = "$key: '{$auditoria->old_values[$key]}' → '$newValue'";
+                    foreach ($auditoria->valores_nuevos as $key => $newValue) {
+                        if (isset($auditoria->valores_anteriores[$key])) {
+                            $cambiosArray[] = "$key: '{$auditoria->valores_anteriores[$key]}' → '$newValue'";
                         }
                     }
                     $cambios = implode(' | ', $cambiosArray);
@@ -132,12 +150,12 @@ class AuditoriaController extends Controller
 
                 fputcsv($file, [
                     $auditoria->id,
-                    $auditoria->user ? $auditoria->user->nombre_completo : 'Sistema',
-                    ucfirst($auditoria->event),
-                    class_basename($auditoria->auditable_type),
-                    $auditoria->auditable_id,
+                    $auditoria->nombre_usuario,
+                    $auditoria->descripcion_accion,
+                    $auditoria->tabla_afectada,
+                    $auditoria->registro_id,
                     $auditoria->ip_address,
-                    $auditoria->created_at->format('d/m/Y H:i:s'),
+                    $auditoria->fecha_hora->format('d/m/Y H:i:s'),
                     $cambios
                 ], ';');
             }
@@ -160,9 +178,105 @@ class AuditoriaController extends Controller
         $dias = $request->get('dias', 90);
         $fechaLimite = now()->subDays($dias);
 
-        $eliminadas = Audit::where('created_at', '<', $fechaLimite)->delete();
+        $eliminadas = Auditoria::where('fecha_hora', '<', $fechaLimite)->delete();
 
         return redirect()->route('auditoria.index')
             ->with('success', "Se eliminaron {$eliminadas} registros de auditoría anteriores a {$dias} días.");
+    }
+
+    /**
+     * API: Actividad reciente para dashboard
+     */
+    public function actividadReciente()
+    {
+        $actividad = Auditoria::with('usuario')
+            ->recientes()
+            ->limit(10)
+            ->get()
+            ->map(function ($auditoria) {
+                return [
+                    'usuario' => $auditoria->nombre_usuario,
+                    'accion' => $auditoria->descripcion_accion,
+                    'fecha' => $auditoria->fecha_hora->format('d/m/Y H:i:s'),
+                    'icono' => $auditoria->icono_accion
+                ];
+            });
+
+        return response()->json($actividad);
+    }
+
+    /**
+     * API: Estadísticas de auditoría para dashboard
+     */
+    public function estadisticas(Request $request)
+    {
+        $fecha = $request->get('fecha', now()->toDateString());
+        
+        $estadisticas = [
+            'logins' => Auditoria::where('accion', 'login_exitoso')
+                ->whereDate('fecha_hora', $fecha)
+                ->count(),
+                
+            'cambios' => Auditoria::whereIn('accion', ['crear_usuario', 'actualizar_usuario', 'eliminar_usuario'])
+                ->whereDate('fecha_hora', $fecha)
+                ->count(),
+                
+            'accesos_denegados' => Auditoria::where('accion', 'acceso_denegado')
+                ->whereDate('fecha_hora', $fecha)
+                ->count(),
+                
+            'total_dia' => Auditoria::whereDate('fecha_hora', $fecha)->count(),
+        ];
+        
+        return response()->json($estadisticas);
+    }
+
+    /**
+     * API: Actividad reciente para dashboard
+     */
+    public function actividadReciente()
+    {
+        $actividad = Auditoria::with('usuario')
+            ->recientes()
+            ->limit(10)
+            ->get()
+            ->map(function ($auditoria) {
+                return [
+                    'usuario' => $auditoria->nombre_usuario,
+                    'accion' => $auditoria->descripcion_accion,
+                    'fecha' => $auditoria->fecha_hora->format('d/m/Y H:i:s'),
+                    'icono' => $auditoria->icono_accion,
+                    'url' => route('auditoria.show', $auditoria)
+                ];
+            });
+
+        return response()->json($actividad);
+    }
+
+    /**
+     * API: Gráfico de actividad por días
+     */
+    public function actividadPorDias(Request $request)
+    {
+        $dias = $request->get('dias', 7);
+        
+        $actividad = Auditoria::selectRaw('DATE(fecha_hora) as fecha, COUNT(*) as total')
+            ->where('fecha_hora', '>=', now()->subDays($dias))
+            ->groupBy('fecha')
+            ->orderBy('fecha')
+            ->get()
+            ->pluck('total', 'fecha');
+            
+        // Generar fechas faltantes con 0
+        $fechas = [];
+        for ($i = $dias - 1; $i >= 0; $i--) {
+            $fecha = now()->subDays($i)->toDateString();
+            $fechas[$fecha] = $actividad->get($fecha, 0);
+        }
+        
+        return response()->json([
+            'labels' => array_keys($fechas),
+            'values' => array_values($fechas)
+        ]);
     }
 }

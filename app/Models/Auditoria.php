@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class Auditoria extends Model
 {
@@ -69,6 +70,45 @@ class Auditoria extends Model
         } catch (\Exception $e) {
             \Log::error('Error registrando auditoría: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Registrar cambios en usuarios con más detalle
+     */
+    public static function registrarCambioUsuario(
+        string $evento,
+        Usuario $usuario,
+        ?array $valoresAnteriores = null,
+        ?array $valoresNuevos = null
+    ): void {
+        $usuarioActual = Auth::id();
+        
+        // Filtrar campos sensibles
+        $camposExcluidos = ['password', 'remember_token', 'token_recuperacion', 'updated_at'];
+        
+        if ($valoresAnteriores) {
+            $valoresAnteriores = array_diff_key($valoresAnteriores, array_flip($camposExcluidos));
+        }
+        
+        if ($valoresNuevos) {
+            $valoresNuevos = array_diff_key($valoresNuevos, array_flip($camposExcluidos));
+        }
+
+        $accion = match($evento) {
+            'created' => 'crear_usuario',
+            'updated' => 'actualizar_usuario', 
+            'deleted' => 'eliminar_usuario',
+            default => $evento
+        };
+
+        self::registrar(
+            $usuarioActual,
+            $accion,
+            'usuarios',
+            $usuario->id,
+            $valoresAnteriores,
+            $valoresNuevos
+        );
     }
 
     /**
@@ -146,5 +186,23 @@ class Auditoria extends Model
         ];
 
         return $acciones[$this->accion] ?? ucfirst(str_replace('_', ' ', $this->accion));
+    }
+
+    /**
+     * Obtener icono para la acción
+     */
+    public function getIconoAccionAttribute(): string
+    {
+        $iconos = [
+            'login_exitoso' => 'fas fa-sign-in-alt text-success',
+            'logout' => 'fas fa-sign-out-alt text-info',
+            'crear_usuario' => 'fas fa-user-plus text-success',
+            'actualizar_usuario' => 'fas fa-edit text-warning',
+            'eliminar_usuario' => 'fas fa-user-times text-danger',
+            'cambio_password' => 'fas fa-key text-info',
+            'acceso_denegado' => 'fas fa-ban text-danger',
+        ];
+
+        return $iconos[$this->accion] ?? 'fas fa-info-circle text-muted';
     }
 }

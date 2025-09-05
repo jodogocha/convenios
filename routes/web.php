@@ -120,6 +120,21 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// super admin
+Route::middleware('checkrole:super_admin')->group(function () {
+    // ... otras rutas existentes de super_admin ...
+    
+    // AUDITORÍA - Rutas completas
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+    Route::get('/auditoria/{auditoria}', [AuditoriaController::class, 'show'])->name('auditoria.show');
+    Route::get('/auditoria/export', [AuditoriaController::class, 'export'])->name('auditoria.export');
+    Route::post('/auditoria/clean', [AuditoriaController::class, 'clean'])->name('auditoria.clean');
+    
+    // API para estadísticas (opcional)
+    Route::get('/api/auditoria/estadisticas', [AuditoriaController::class, 'estadisticas'])->name('api.auditoria.estadisticas');
+    Route::get('/api/auditoria/actividad-reciente', [AuditoriaController::class, 'actividadReciente'])->name('api.auditoria.actividad-reciente');
+});
+
 // Ruta catch-all para errores 404
 Route::fallback(function () {
     if (auth()->check()) {
