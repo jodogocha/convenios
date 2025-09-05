@@ -198,7 +198,8 @@ class AuditoriaController extends Controller
                     'usuario' => $auditoria->nombre_usuario,
                     'accion' => $auditoria->descripcion_accion,
                     'fecha' => $auditoria->fecha_hora->format('d/m/Y H:i:s'),
-                    'icono' => $auditoria->icono_accion
+                    'icono' => $auditoria->icono_accion,
+                    'url' => route('auditoria.show', $auditoria)
                 ];
             });
 
@@ -229,28 +230,6 @@ class AuditoriaController extends Controller
         ];
         
         return response()->json($estadisticas);
-    }
-
-    /**
-     * API: Actividad reciente para dashboard
-     */
-    public function actividadReciente()
-    {
-        $actividad = Auditoria::with('usuario')
-            ->recientes()
-            ->limit(10)
-            ->get()
-            ->map(function ($auditoria) {
-                return [
-                    'usuario' => $auditoria->nombre_usuario,
-                    'accion' => $auditoria->descripcion_accion,
-                    'fecha' => $auditoria->fecha_hora->format('d/m/Y H:i:s'),
-                    'icono' => $auditoria->icono_accion,
-                    'url' => route('auditoria.show', $auditoria)
-                ];
-            });
-
-        return response()->json($actividad);
     }
 
     /**

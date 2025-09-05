@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;  
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\AuditoriaController; // AGREGAR ESTA LÍNEA
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,21 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ========================================
+    // AUDITORÍA - Solo super_admin
+    // ========================================
+    Route::middleware('checkrole:super_admin')->group(function () {
+        Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+        Route::get('/auditoria/{auditoria}', [AuditoriaController::class, 'show'])->name('auditoria.show');
+        Route::get('/auditoria/export', [AuditoriaController::class, 'export'])->name('auditoria.export');
+        Route::post('/auditoria/clean', [AuditoriaController::class, 'clean'])->name('auditoria.clean');
+        
+        // API para estadísticas
+        Route::get('/api/auditoria/estadisticas', [AuditoriaController::class, 'estadisticas']);
+        Route::get('/api/auditoria/actividad-reciente', [AuditoriaController::class, 'actividadReciente']);
+        Route::get('/api/auditoria/actividad-dias', [AuditoriaController::class, 'actividadPorDias']);
+    });
+    
+    // ========================================
     // CONVENIOS
     // ========================================
     Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
@@ -108,31 +124,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/configuracion', function () {
             return redirect()->route('configuracion.index')->with('success', 'Configuración actualizada');
         })->name('configuracion.update');
-        
-        Route::get('/auditoria', function () {
-            $auditorias = \App\Models\Auditoria::with('usuario')->latest()->paginate(20);
-            return view('admin.auditoria.index', compact('auditorias'));
-        })->name('auditoria.index');
-        
-        Route::get('/roles', function () {
-            return view('admin.roles.index');
-        })->name('roles.index');
     });
-});
-
-// super admin
-Route::middleware('checkrole:super_admin')->group(function () {
-    // ... otras rutas existentes de super_admin ...
-    
-    // AUDITORÍA - Rutas completas
-    Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
-    Route::get('/auditoria/{auditoria}', [AuditoriaController::class, 'show'])->name('auditoria.show');
-    Route::get('/auditoria/export', [AuditoriaController::class, 'export'])->name('auditoria.export');
-    Route::post('/auditoria/clean', [AuditoriaController::class, 'clean'])->name('auditoria.clean');
-    
-    // API para estadísticas (opcional)
-    Route::get('/api/auditoria/estadisticas', [AuditoriaController::class, 'estadisticas'])->name('api.auditoria.estadisticas');
-    Route::get('/api/auditoria/actividad-reciente', [AuditoriaController::class, 'actividadReciente'])->name('api.auditoria.actividad-reciente');
 });
 
 // Ruta catch-all para errores 404
