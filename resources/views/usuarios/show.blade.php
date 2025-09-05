@@ -239,42 +239,42 @@
                                 <div class="timeline-item">
                                     <span class="time">
                                         <i class="fas fa-clock mr-1"></i>
+                                        @php
+                                             // Si por alguna razón $usuario no está, devolvemos colección vacía.
+                                            $audits = data_get($usuario ?? null, 'audits', collect());
+                                        @endphp
+
                                         {{ $usuario->created_at ? $usuario->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
                                     </span>
                                     <h3 class="timeline-header">Usuario creado</h3>
                                     <div class="timeline-body">
-                                        @if($usuario->creador)
-                                            Usuario creado por <strong>{{ $usuario->creador->nombre_completo }}</strong>
+                                        @if($usuario->audits->isEmpty())
+                                            <p class="text-sm text-gray-600">No hay cambios registrados.</p>
                                         @else
-                                            Usuario creado en el sistema
+                                            <ul>
+                                                @foreach($usuario->audits as $audit)
+                                                    <li>
+                                                        <strong>Evento:</strong> {{ $audit->event }} 
+                                                        {{-- events: created, updated, deleted, restored --}}
+                                                        <br>
+                                                        <strong>Por:</strong> {{ optional($audit->user)->nombre ?? 'Sistema/Desconocido' }}
+                                                        <br>
+                                                        <strong>Fecha:</strong> {{ $audit->created_at->format('d/m/Y H:i') }}
+                                                        <br>
+                                                        {{-- Cambios (old/new) resumidos --}}
+                                                        @if(!empty($audit->modified))
+                                                            <details>
+                                                                <summary>Ver cambios</summary>
+                                                                <pre>@json($audit->modified, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)</pre>
+                                                            </details>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
                                         @endif
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Última modificación -->
-                            @if($usuario->updated_at && $usuario->updated_at != $usuario->created_at)
-                            <div class="time-label">
-                                <span class="bg-yellow">Modificación</span>
-                            </div>
-                            <div>
-                                <i class="fas fa-edit bg-yellow"></i>
-                                <div class="timeline-item">
-                                    <span class="time">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        {{ $usuario->updated_at->format('d/m/Y H:i:s') }}
-                                    </span>
-                                    <h3 class="timeline-header">Usuario modificado</h3>
-                                    <div class="timeline-body">
-                                        @if($usuario->editor)
-                                            Última modificación realizada por <strong>{{ $usuario->editor->nombre_completo }}</strong>
-                                        @else
-                                            Usuario modificado en el sistema
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
 
                             <!-- Último login -->
                             @if($usuario->ultimo_login)

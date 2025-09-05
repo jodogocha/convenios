@@ -96,7 +96,6 @@ class UsuarioController extends Controller
             'rol_id' => $request->rol_id,
             'telefono' => $request->telefono,
             'activo' => $request->has('activo'),
-            'creado_por' => Auth::id()
         ]);
 
         return redirect()->route('usuarios.index')
@@ -108,7 +107,7 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
-        $usuario->load('rol', 'creador', 'editor');
+        $usuario->load('audits.user'); // trae el historial + quién hizo cada cambio
         return view('usuarios.show', compact('usuario'));
     }
 
@@ -156,7 +155,6 @@ class UsuarioController extends Controller
             'rol_id' => $request->rol_id,
             'telefono' => $request->telefono,
             'activo' => $request->has('activo'),
-            'editado_por' => Auth::id()
         ];
 
         // Solo actualizar contraseña si se proporciona

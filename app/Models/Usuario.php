@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class Usuario extends Authenticatable
+class Usuario extends Authenticatable implements AuditableContract
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, AuditableTrait;
 
     protected $table = 'usuarios';
 
@@ -43,6 +46,12 @@ class Usuario extends Authenticatable
         'ip_ultima_sesion',
     ];
 
+    // EXCLUIR campos sensibles o ruidosos del log
+    protected $auditExclude = [
+        'password',
+        'remember_token',
+        'updated_at',
+    ];
     /**
      * The attributes that should be hidden for serialization.
      *
