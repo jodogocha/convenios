@@ -41,20 +41,46 @@
         .brand-link {
             background-color: rgba(0, 0, 0, 0.1);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 0.5rem;
+            text-decoration: none;
+        }
+        .brand-link:hover {
+            text-decoration: none;
+        }
+        .brand-icon {
+            color: white;
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        .brand-icon:hover {
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+        .brand-text {
+            white-space: normal !important; /* permite el salto de línea */
+            color: white;
+            font-size: 25px;
+            font-weight: 300;
+            text-align: center;
+            line-height: 1.2;
+            display: block;                 /* para que respete el ancho del sidebar */
+            padding: 0 5px;                 /* opcional: espacio interno para que no pegue al borde */
+            margin: 0;
+            text-decoration: none;
+            word-break: break-word;         /* si hay palabras muy largas, que corten */
+            pointer-events: none; /* Evita que el texto sea clickeable */
         }
         .user-panel .info a {
             color: white;
         }
-        .brand-link .brand-text {
-            white-space: normal !important; /* permite el salto de línea */
-            text-align: center;             /* lo mantiene centrado */
-            display: block;                 /* para que respete el ancho del sidebar */
-            padding: 0 5px;                 /* opcional: espacio interno para que no pegue al borde */
-            word-break: break-word;         /* si hay palabras muy largas, que corten */
-        }
         .main-header.navbar {
-        background-color:rgb(255, 255, 255) !important; 
-        color: #fff !important; /* asegura que el texto sea blanco */
+            background-color:rgb(255, 255, 255) !important; 
+            color: #fff !important;
         }
     </style>
 </head>
@@ -88,14 +114,14 @@
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="{{ route('dashboard') }}" 
-                class="brand-link d-flex justify-content-center align-items-center">
-                <i class="fas fa-handshake brand-image img-circle elevation-3 mr-2" style="font-size: 50px;"></i>
-                <p>
-                <span class="brand-text font-weight-light text-center">
+            <div class="brand-link">
+                <a href="{{ route('dashboard') }}" class="brand-icon">
+                    <i class="fas fa-handshake fa-3x"></i>
+                </a>
+                <span class="brand-text">
                     Sistema de Gestión de Convenios
                 </span>
-            </a>
+            </div>
 
             <!-- Sidebar -->
             <div class="sidebar">

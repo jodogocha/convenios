@@ -12,31 +12,31 @@
 <div class="row">
     <!-- Tarjeta de bienvenida -->
     <div class="col-12">
-        <div class="card card-primary card-outline">
+        <div class="card card-outline welcome-card">
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h4 class="card-title mb-2">
-                            <i class="fas fa-user-circle mr-2 text-primary"></i>
+                            <i class="fas fa-user-circle mr-2 text-white"></i>
                             ¡Bienvenido, {{ $usuario->nombre_completo }}!
                         </h4>
-                        <p class="card-text text-muted mb-0">                          
+                        <p class="card-text text-white-50 mb-0">                          
                         </p>
                         @if($ultimoLogin)
-                        <p class="card-text text-muted mb-0">
+                        <p class="card-text text-white-50 mb-0">
                             <i class="fas fa-clock mr-2"></i>
-                            Último acceso: <strong>{{ $ultimoLogin->format('d/m/Y H:i:s') }}</strong>
+                            Último acceso: <strong class="text-white">{{ $ultimoLogin->format('d/m/Y H:i:s') }}</strong>
                         </p>
                         @endif
                     </div>
                     <div class="col-md-4 text-right">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="actualizarEstadisticas()" title="Actualizar estadísticas">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="actualizarEstadisticas()" title="Actualizar estadísticas">
                                 <i class="fas fa-sync-alt mr-1"></i>Actualizar
                             </button>
                             <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                                 @csrf
-                                <button type="submit" class="btn btn-outline-secondary btn-sm" title="Cerrar sesión">
+                                <button type="submit" class="btn btn-outline-light btn-sm" title="Cerrar sesión">
                                     <i class="fas fa-sign-out-alt mr-1"></i>Salir
                                 </button>
                             </form>
@@ -91,7 +91,7 @@
                 <h3 id="conveniosPendientes">
                     <i class="fas fa-spinner fa-spin"></i>
                 </h3>
-                <p>Pendientes Aprobación</p>
+                <p>Pendientes de Aprobación</p>
             </div>
             <div class="icon">
                 <i class="fas fa-hourglass-half"></i>
@@ -384,6 +384,40 @@
 
 @push('styles')
 <style>
+    /* Tarjeta de bienvenida con el mismo estilo que la barra lateral */
+    .welcome-card {
+        background: linear-gradient(180deg, rgb(70, 1, 1) 0%, rgb(34, 0, 0) 100%);
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        color: white;
+    }
+    
+    .welcome-card .card-body {
+        background: transparent;
+    }
+    
+    .welcome-card .card-title {
+        color: white;
+    }
+    
+    .welcome-card .text-white-50 {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .welcome-card .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .welcome-card .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        transform: translateY(-1px);
+    }
+
     .small-box {
         border-radius: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
