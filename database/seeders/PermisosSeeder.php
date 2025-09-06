@@ -77,7 +77,7 @@ class PermisosSeeder extends Seeder
             $permisosAdmin = Permiso::whereIn('nombre', [
                 'usuarios.crear', 'usuarios.leer', 'usuarios.actualizar',
                 'roles.leer', 
-                'convenios.crear', 'convenios.leer', 'convenios.actualizar', 'convenios.aprobar',
+                'convenios.crear', 'convenios.leer', 'convenios.actualizar', 'convenios.eliminar', 'convenios.aprobar',
                 'reportes.ver', 'reportes.exportar',
                 'auditoria.ver',
                 'configuracion.ver',

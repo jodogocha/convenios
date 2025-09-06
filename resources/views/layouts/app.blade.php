@@ -163,14 +163,6 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(Auth::user()->tienePermiso('convenios.aprobar'))
-                                <li class="nav-item">
-                                    <a href="{{ route('convenios.pendientes') }}" class="nav-link {{ request()->routeIs('convenios.pendientes') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Pendientes de Aprobación</p>
-                                    </a>
-                                </li>
-                                @endif
                             </ul>
                         </li>
                         @endif

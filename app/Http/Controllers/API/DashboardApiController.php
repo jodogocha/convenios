@@ -30,11 +30,13 @@ class DashboardApiController extends Controller
                 ->whereYear('created_at', now()->year)
                 ->count(),
             
-            // Estadísticas de convenios (placeholder por ahora)
-            'total_convenios' => 0,
-            'convenios_activos' => 0,
-            'convenios_pendientes' => 0,
-            'convenios_por_vencer' => 0,
+            // Estadísticas de convenios
+            'total_convenios' => \App\Models\Convenio::count(),
+            'convenios_activos' => \App\Models\Convenio::where('estado', 'activo')->count(),
+            'convenios_pendientes' => \App\Models\Convenio::where('estado', 'pendiente_aprobacion')->count(),
+            'convenios_por_vencer' => \App\Models\Convenio::porVencer(30)->count(),
+            'convenios_vencidos' => \App\Models\Convenio::vencidos()->count(),
+            'convenios_borradores' => \App\Models\Convenio::where('estado', 'borrador')->count(),
             
             // Estadísticas adicionales
             'total_roles' => DB::table('roles')->count(),

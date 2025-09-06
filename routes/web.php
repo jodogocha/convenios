@@ -5,7 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
-use App\Http\Controllers\Api\DashboardApiController; // NUEVA LÍNEA
+use App\Http\Controllers\ConvenioController; // NUEVA LÍNEA
+use App\Http\Controllers\Api\DashboardApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +65,13 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ========================================
+    // API ENDPOINTS PARA CONVENIOS
+    // ========================================
+    Route::prefix('api/convenios')->group(function () {
+        Route::get('/estadisticas', [ConvenioController::class, 'estadisticasApi']);
+    });
+    
+    // ========================================
     // GESTIÓN DE USUARIOS - Usando CheckRole
     // ========================================
     Route::middleware('checkrole:admin,super_admin')->group(function () {
@@ -73,6 +81,28 @@ Route::middleware(['auth'])->group(function () {
             
         // Resource completo de usuarios
         Route::resource('usuarios', UsuarioController::class);
+    });
+    
+    // ========================================
+    // GESTIÓN DE CONVENIOS
+    // ========================================
+    Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
+        
+        // Rutas especiales que deben ir ANTES del resource para evitar conflictos
+        Route::get('/convenios/pendientes', [ConvenioController::class, 'pendientes'])->name('convenios.pendientes');
+        Route::get('/convenios/exportar', [ConvenioController::class, 'exportar'])->name('convenios.exportar');
+        Route::get('/convenios/{convenio}/descargar', [ConvenioController::class, 'descargarArchivo'])->name('convenios.descargar');
+        
+        // Resource completo de convenios
+        Route::resource('convenios', ConvenioController::class);
+        
+        // Rutas de acciones que requieren permisos especiales
+        Route::middleware('checkrole:admin,super_admin')->group(function () {
+            Route::post('/convenios/{convenio}/aprobar', [ConvenioController::class, 'aprobar'])->name('convenios.aprobar');
+            Route::post('/convenios/{convenio}/activar', [ConvenioController::class, 'activar'])->name('convenios.activar');
+            Route::post('/convenios/{convenio}/cancelar', [ConvenioController::class, 'cancelar'])->name('convenios.cancelar');
+            Route::post('/convenios/{convenio}/cambiar-estado', [ConvenioController::class, 'cambiarEstado'])->name('convenios.cambiar-estado');
+        });
     });
     
     // ========================================
@@ -91,23 +121,6 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ========================================
-    // CONVENIOS
-    // ========================================
-    Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
-        Route::get('/convenios', function () {
-            return view('admin.convenios.index', ['convenios' => []]);
-        })->name('convenios.index');
-        
-        Route::get('/convenios/create', function () {
-            return view('admin.convenios.create');
-        })->name('convenios.create');
-        
-        Route::get('/convenios/pendientes', function () {
-            return view('admin.convenios.pendientes', ['convenios' => []]);
-        })->name('convenios.pendientes');
-    });
-    
-    // ========================================
     // REPORTES
     // ========================================
     Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
@@ -123,27 +136,4 @@ Route::middleware(['auth'])->group(function () {
             return view('admin.reportes.usuarios');
         })->name('reportes.usuarios');
     });
-    
-    // ========================================
-    // CONFIGURACIÓN DEL SISTEMA
-    // ========================================
-    Route::middleware('checkrole:super_admin')->group(function () {
-        Route::get('/configuracion', function () {
-            return view('configuracion-temp', [
-                'usuario' => Auth::user()
-            ]);
-        })->name('configuracion.index');
-        
-        Route::post('/configuracion', function () {
-            return redirect()->route('configuracion.index')->with('success', 'Configuración actualizada');
-        })->name('configuracion.update');
-    });
-});
-
-// Ruta catch-all para errores 404
-Route::fallback(function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard')->with('error', 'Página no encontrada');
-    }
-    return redirect()->route('login');
 });
