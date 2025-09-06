@@ -196,6 +196,35 @@
                         </li>
                         @endif
 
+                        @if(Auth::user()->tieneRol('super_admin'))
+                        <!-- Gestión de Accesos -->
+                        <li class="nav-item {{ request()->is('roles*') || request()->is('permisos*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->is('roles*') || request()->is('permisos*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-shield-alt"></i>
+                                <p>
+                                    Gestión de Accesos
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <!-- Roles -->
+                                <li class="nav-item">
+                                    <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Gestionar Roles</p>
+                                    </a>
+                                </li>
+                                <!-- Permisos -->
+                                <li class="nav-item">
+                                    <a href="{{ route('permisos.index') }}" class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Gestionar Permisos</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        @endif
+
                         @if(Auth::user()->tienePermiso('reportes.ver'))
                         <!-- Reportes -->
                         <li class="nav-item {{ request()->is('reportes*') ? 'menu-open' : '' }}">

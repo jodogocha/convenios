@@ -5,7 +5,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
-use App\Http\Controllers\ConvenioController; // NUEVA LÍNEA
+use App\Http\Controllers\ConvenioController;
+use App\Http\Controllers\RolController;        // NUEVA LÍNEA
+use App\Http\Controllers\PermisoController;    // NUEVA LÍNEA
 use App\Http\Controllers\Api\DashboardApiController;
 
 /*
@@ -81,6 +83,39 @@ Route::middleware(['auth'])->group(function () {
             
         // Resource completo de usuarios
         Route::resource('usuarios', UsuarioController::class);
+    });
+    
+    // ========================================
+    // GESTIÓN DE ROLES - Solo super_admin
+    // ========================================
+    Route::middleware('checkrole:super_admin')->group(function () {
+        // Rutas especiales que deben ir ANTES del resource
+        Route::get('/roles/export', [RolController::class, 'export'])->name('roles.export');
+        Route::get('/roles/{rol}/clonar', [RolController::class, 'clonar'])->name('roles.clonar');
+        Route::post('/roles/{rol}/clonar', [RolController::class, 'procesarClon'])->name('roles.procesar-clon');
+        Route::post('/roles/{rol}/toggle-estado', [RolController::class, 'toggleEstado'])->name('roles.toggle-estado');
+        
+        // Resource completo de roles
+        Route::resource('roles', RolController::class);
+        
+        // API para obtener permisos de un rol
+        Route::get('/api/roles/{rol}/permisos', [RolController::class, 'getPermisos'])->name('roles.api.permisos');
+    });
+    
+    // ========================================
+    // GESTIÓN DE PERMISOS - Solo super_admin
+    // ========================================
+    Route::middleware('checkrole:super_admin')->group(function () {
+        // Rutas especiales que deben ir ANTES del resource
+        Route::get('/permisos/export', [PermisoController::class, 'export'])->name('permisos.export');
+        Route::get('/permisos/gestion-masiva', [PermisoController::class, 'gestionMasiva'])->name('permisos.gestion-masiva');
+        Route::post('/permisos/crear-masivo', [PermisoController::class, 'crearMasivo'])->name('permisos.crear-masivo');
+        Route::post('/permisos/{permiso}/toggle-estado', [PermisoController::class, 'toggleEstado'])->name('permisos.toggle-estado');
+        
+        // Resource completo de permisos
+        Route::resource('permisos', PermisoController::class)->parameters([
+            'permisos' => 'permiso'
+        ]);
     });
     
     // ========================================
