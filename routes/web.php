@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;  
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\AuditoriaController; // AGREGAR ESTA LÍNEA
+use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\Api\DashboardApiController; // NUEVA LÍNEA
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,18 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/perfil/password', [AuthController::class, 'cambiarPassword'])->name('perfil.password');
     
     // ========================================
+    // API ENDPOINTS PARA DASHBOARD
+    // ========================================
+    Route::prefix('api/dashboard')->group(function () {
+        Route::get('/estadisticas', [DashboardApiController::class, 'estadisticas']);
+        Route::get('/actividad-reciente', [DashboardApiController::class, 'actividadReciente']);
+        Route::get('/estadisticas-usuarios', [DashboardApiController::class, 'estadisticasUsuarios']);
+        Route::get('/usuarios-mes', [DashboardApiController::class, 'usuariosPorMes']);
+        Route::get('/logins-dia', [DashboardApiController::class, 'loginsPorDia']);
+        Route::get('/estadisticas-login', [DashboardApiController::class, 'estadisticasLogin']);
+    });
+    
+    // ========================================
     // GESTIÓN DE USUARIOS - Usando CheckRole
     // ========================================
     Route::middleware('checkrole:admin,super_admin')->group(function () {
@@ -71,7 +84,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/auditoria/export', [AuditoriaController::class, 'export'])->name('auditoria.export');
         Route::post('/auditoria/clean', [AuditoriaController::class, 'clean'])->name('auditoria.clean');
         
-        // API para estadísticas
+        // API para estadísticas de auditoría
         Route::get('/api/auditoria/estadisticas', [AuditoriaController::class, 'estadisticas']);
         Route::get('/api/auditoria/actividad-reciente', [AuditoriaController::class, 'actividadReciente']);
         Route::get('/api/auditoria/actividad-dias', [AuditoriaController::class, 'actividadPorDias']);

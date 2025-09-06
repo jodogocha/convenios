@@ -31,14 +31,15 @@
                     </div>
                     <div class="col-md-4 text-right">
                         <div class="btn-group" role="group">
-                            <p class="card-text text-muted mb-0">
-                                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-link p-0 text-muted" style="text-decoration: none;">
-                                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-                                    </button>
-                                </form>
-                            </p>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="actualizarEstadisticas()" title="Actualizar estadísticas">
+                                <i class="fas fa-sync-alt mr-1"></i>Actualizar
+                            </button>
+                            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary btn-sm" title="Cerrar sesión">
+                                    <i class="fas fa-sign-out-alt mr-1"></i>Salir
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -53,7 +54,9 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
             <div class="inner">
-                <h3 id="totalConvenios">-</h3>
+                <h3 id="totalConvenios">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </h3>
                 <p>Total Convenios</p>
             </div>
             <div class="icon">
@@ -68,7 +71,9 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-success">
             <div class="inner">
-                <h3 id="conveniosActivos">-</h3>
+                <h3 id="conveniosActivos">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </h3>
                 <p>Convenios Activos</p>
             </div>
             <div class="icon">
@@ -83,7 +88,9 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
             <div class="inner">
-                <h3 id="conveniosPendientes">-</h3>
+                <h3 id="conveniosPendientes">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </h3>
                 <p>Pendientes Aprobación</p>
             </div>
             <div class="icon">
@@ -98,7 +105,9 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-danger">
             <div class="inner">
-                <h3 id="conveniosPorVencer">-</h3>
+                <h3 id="conveniosPorVencer">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </h3>
                 <p>Por Vencer (30 días)</p>
             </div>
             <div class="icon">
@@ -115,7 +124,9 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-secondary">
             <div class="inner">
-                <h3 id="totalUsuarios">-</h3>
+                <h3 id="totalUsuarios">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </h3>
                 <p>Total Usuarios</p>
             </div>
             <div class="icon">
@@ -146,13 +157,13 @@
         </div>
     </div>
 
-    <!-- Gráfico de convenios por mes -->
+    <!-- Gráfico de usuarios registrados por mes -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-chart-line mr-2"></i>
-                    Convenios Creados (Últimos 6 meses)
+                    Usuarios Registrados (Últimos 6 meses)
                 </h3>
             </div>
             <div class="card-body">
@@ -241,7 +252,9 @@
                     @if(Auth::user()->tienePermiso('convenios.aprobar'))
                     <a href="{{ route('convenios.pendientes') }}" class="btn btn-secondary">
                         <i class="fas fa-clock mr-2"></i>Pendientes
-                        <span class="badge badge-light ml-1" id="badgePendientes">0</span>
+                        <span class="badge badge-light ml-1" id="badgePendientes">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
                     </a>
                     @endif
                 </div>
@@ -256,24 +269,117 @@
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="info-box-content">
-                                <span class="info-box-number text-success" id="usuariosActivos">-</span>
+                                <span class="info-box-number text-success" id="usuariosActivos">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
                                 <span class="info-box-text">Activos</span>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="info-box-content">
-                                <span class="info-box-number text-danger" id="usuariosInactivos">-</span>
+                                <span class="info-box-number text-danger" id="usuariosInactivos">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
                                 <span class="info-box-text">Inactivos</span>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas adicionales -->
+                    <div class="row text-center mt-2">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="fas fa-user-plus mr-1"></i>
+                                Nuevos esta semana: 
+                                <span class="font-weight-bold text-info" id="usuariosRecientes">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </small>
                         </div>
                     </div>
                 </div>
                 @endif
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- Card adicional con estadísticas de sistema para super_admin -->
+@if(Auth::user()->tieneRol('super_admin'))
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-cogs mr-2"></i>
+                    Estadísticas del Sistema
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-info">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Logins Hoy</span>
+                                <span class="info-box-number" id="loginsHoy">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-success">
+                                <i class="fas fa-shield-alt"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Total Roles</span>
+                                <span class="info-box-number" id="totalRoles">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-warning">
+                                <i class="fas fa-users"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Activos 30 días</span>
+                                <span class="info-box-number" id="activosUltimos30">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-danger">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Bloqueados</span>
+                                <span class="info-box-number" id="usuariosBloqueados">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('styles')
@@ -315,9 +421,7 @@
     }
 
     .info-box-number {
-        display: block;
-        font-weight: bold;
-        font-size: 1.2rem;
+        font-size: 14px !important;
     }
     
     .info-box-text {
@@ -333,6 +437,19 @@
     .btn-link:hover {
         text-decoration: underline !important;
     }
+
+    .loading-spinner {
+        color: #6c757d;
+        font-size: 0.8em;
+    }
+
+    .info-box {
+        border-radius: 8px;
+    }
+
+    .info-box-icon {
+        border-radius: 8px 0 0 8px;
+    }
 </style>
 @endpush
 
@@ -343,12 +460,14 @@
 $(document).ready(function() {
     // Cargar estadísticas del dashboard
     cargarEstadisticas();
+    cargarEstadisticasUsuarios();
     cargarActividadReciente();
     cargarGraficos();
     
     // Actualizar cada 5 minutos
     setInterval(function() {
         cargarEstadisticas();
+        cargarEstadisticasUsuarios();
         cargarActividadReciente();
     }, 300000);
 });
@@ -356,20 +475,59 @@ $(document).ready(function() {
 function cargarEstadisticas() {
     $.get('/api/dashboard/estadisticas')
         .done(function(data) {
+            // Actualizar widgets principales
             $('#totalConvenios').text(data.total_convenios || 0);
             $('#conveniosActivos').text(data.convenios_activos || 0);
             $('#conveniosPendientes').text(data.convenios_pendientes || 0);
             $('#conveniosPorVencer').text(data.convenios_por_vencer || 0);
+            
+            // Actualizar widget de usuarios
             $('#totalUsuarios').text(data.total_usuarios || 0);
+            
+            // Actualizar badge de pendientes
             $('#badgePendientes').text(data.convenios_pendientes || 0);
             
-            // Estadísticas de usuarios
-            $('#usuariosActivos').text(data.usuarios_activos || 0);
-            $('#usuariosInactivos').text(data.usuarios_inactivos || 0);
-            $('#usuariosRecientes').text(data.usuarios_mes_actual || 0);
+            // Estadísticas adicionales para super_admin
+            $('#loginsHoy').text(data.logins_hoy || 0);
+            $('#totalRoles').text(data.total_roles || 0);
+            
+            console.log('Estadísticas cargadas:', data);
         })
-        .fail(function() {
-            console.log('Error al cargar estadísticas');
+        .fail(function(xhr, status, error) {
+            console.error('Error al cargar estadísticas:', error);
+            // Mostrar valores por defecto en caso de error
+            $('#totalConvenios').text('N/A');
+            $('#conveniosActivos').text('N/A');
+            $('#conveniosPendientes').text('N/A');
+            $('#conveniosPorVencer').text('N/A');
+            $('#totalUsuarios').text('N/A');
+            $('#badgePendientes').text('0');
+            $('#loginsHoy').text('N/A');
+            $('#totalRoles').text('N/A');
+        });
+}
+
+function cargarEstadisticasUsuarios() {
+    $.get('/api/dashboard/estadisticas-usuarios')
+        .done(function(data) {
+            // Actualizar resumen de usuarios en panel lateral
+            $('#usuariosActivos').text(data.activos || 0);
+            $('#usuariosInactivos').text(data.inactivos || 0);
+            $('#usuariosRecientes').text(data.nuevos_ultimos_7_dias || 0);
+            
+            // Estadísticas adicionales para super_admin
+            $('#activosUltimos30').text(data.activos_ultimos_30_dias || 0);
+            $('#usuariosBloqueados').text(data.bloqueados || 0);
+            
+            console.log('Estadísticas de usuarios cargadas:', data);
+        })
+        .fail(function(xhr, status, error) {
+            console.error('Error al cargar estadísticas de usuarios:', error);
+            $('#usuariosActivos').text('N/A');
+            $('#usuariosInactivos').text('N/A');
+            $('#usuariosRecientes').text('N/A');
+            $('#activosUltimos30').text('N/A');
+            $('#usuariosBloqueados').text('N/A');
         });
 }
 
@@ -381,7 +539,10 @@ function cargarActividadReciente() {
                 data.forEach(function(item) {
                     html += '<tr>';
                     html += '<td><small>' + item.usuario + '</small></td>';
-                    html += '<td><small>' + item.accion + '</small></td>';
+                    html += '<td>';
+                    html += '<i class="' + item.icono + ' mr-1"></i>';
+                    html += '<small>' + item.accion + '</small>';
+                    html += '</td>';
                     html += '<td><small>' + item.fecha + '</small></td>';
                     html += '</tr>';
                 });
@@ -390,23 +551,28 @@ function cargarActividadReciente() {
             }
             $('#actividadReciente').html(html);
         })
-        .fail(function() {
+        .fail(function(xhr, status, error) {
+            console.error('Error al cargar actividad reciente:', error);
             $('#actividadReciente').html('<tr><td colspan="3" class="text-center text-danger">Error al cargar datos</td></tr>');
         });
 }
 
 function cargarGraficos() {
-    // Gráfico de convenios por estado
-    $.get('/api/dashboard/convenios-estado')
+    // Gráfico de convenios por estado (datos simulados por ahora)
+    $.get('/api/dashboard/estadisticas')
         .done(function(data) {
             var ctx = document.getElementById('conveniosEstadoChart');
             if (ctx) {
                 new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: data.labels || ['Activos', 'Pendientes', 'Vencidos'],
+                        labels: ['Activos', 'Pendientes', 'Vencidos'],
                         datasets: [{
-                            data: data.values || [0, 0, 0],
+                            data: [
+                                data.convenios_activos || 0, 
+                                data.convenios_pendientes || 0, 
+                                data.convenios_por_vencer || 0
+                            ],
                             backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
                             borderWidth: 0
                         }]
@@ -427,8 +593,8 @@ function cargarGraficos() {
             console.log('Error al cargar gráfico de convenios por estado');
         });
 
-    // Gráfico de convenios por mes
-    $.get('/api/dashboard/convenios-mes')
+    // Gráfico de usuarios por mes
+    $.get('/api/dashboard/usuarios-mes')
         .done(function(data) {
             var ctx = document.getElementById('conveniosMesChart');
             if (ctx) {
@@ -437,7 +603,7 @@ function cargarGraficos() {
                     data: {
                         labels: data.labels || [],
                         datasets: [{
-                            label: 'Convenios Creados',
+                            label: 'Usuarios Registrados',
                             data: data.values || [],
                             borderColor: '#007bff',
                             backgroundColor: 'rgba(0, 123, 255, 0.1)',
@@ -467,8 +633,54 @@ function cargarGraficos() {
             }
         })
         .fail(function() {
-            console.log('Error al cargar gráfico de convenios por mes');
+            console.log('Error al cargar gráfico de usuarios por mes');
         });
+
+    // Gráfico de logins por día (opcional)
+    $.get('/api/dashboard/logins-dia')
+        .done(function(data) {
+            // Puedes crear otro gráfico aquí si quieres mostrar logins
+            console.log('Datos de logins por día:', data);
+        })
+        .fail(function() {
+            console.log('Error al cargar datos de logins por día');
+        });
+}
+
+// Función para actualizar manualmente las estadísticas
+window.actualizarEstadisticas = function() {
+    // Mostrar spinners
+    $('#totalUsuarios, #usuariosActivos, #usuariosInactivos, #usuariosRecientes').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#badgePendientes').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#loginsHoy, #totalRoles, #activosUltimos30, #usuariosBloqueados').html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    // Cargar datos actualizados
+    cargarEstadisticas();
+    cargarEstadisticasUsuarios();
+    cargarActividadReciente();
+    
+    // Mostrar mensaje de éxito
+    $(document).Toasts('create', {
+        class: 'bg-success',
+        title: 'Actualizado',
+        subtitle: 'Dashboard',
+        body: 'Estadísticas actualizadas correctamente'
+    });
+};
+
+// Mostrar indicador de carga
+function mostrarCargando(elemento) {
+    $(elemento).html('<i class="fas fa-spinner fa-spin"></i>');
+}
+
+// Función para formatear números grandes
+function formatearNumero(numero) {
+    if (numero >= 1000000) {
+        return (numero / 1000000).toFixed(1) + 'M';
+    } else if (numero >= 1000) {
+        return (numero / 1000).toFixed(1) + 'K';
+    }
+    return numero.toString();
 }
 </script>
 @endpush
