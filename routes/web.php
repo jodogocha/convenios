@@ -9,6 +9,7 @@ use App\Http\Controllers\ConvenioController;
 use App\Http\Controllers\RolController;        // NUEVA LÍNEA
 use App\Http\Controllers\PermisoController;    // NUEVA LÍNEA
 use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\InformeController;    // NUEVA LÍNEA PARA INFORMES
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,13 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ========================================
+    // API ENDPOINTS PARA INFORMES
+    // ========================================
+    Route::prefix('api/informes')->group(function () {
+        Route::get('/estadisticas', [InformeController::class, 'estadisticasApi']);
+    });
+    
+    // ========================================
     // GESTIÓN DE USUARIOS - Usando CheckRole
     // ========================================
     Route::middleware('checkrole:admin,super_admin')->group(function () {
@@ -104,6 +112,32 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/roles/{role}/permisos', [RolController::class, 'getPermisos'])->name('roles.api.permisos');
     });
     
+    // ========================================
+    // GESTIÓN DE INFORMES
+    // ========================================
+    Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
+        
+        // Rutas especiales que deben ir ANTES del resource para evitar conflictos
+        Route::get('/informes/pendientes', [InformeController::class, 'pendientes'])->name('informes.pendientes');
+        Route::get('/informes/exportar-excel', [InformeController::class, 'exportarExcel'])->name('informes.exportar-excel');
+        Route::get('/informes/{informe}/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('informes.exportar-pdf');
+        Route::get('/informes/{informe}/duplicar', [InformeController::class, 'duplicar'])->name('informes.duplicar');
+        Route::get('/api/convenios/{convenio}', [InformeController::class, 'getConvenio'])->name('informes.get-convenio');
+        
+        // Resource completo de informes
+        Route::resource('informes', InformeController::class);
+        
+        // Rutas de acciones específicas
+        Route::post('/informes/{informe}/enviar', [InformeController::class, 'enviar'])->name('informes.enviar');
+        Route::post('/informes/{informe}/cambiar-estado', [InformeController::class, 'cambiarEstado'])->name('informes.cambiar-estado');
+        
+        // Rutas que requieren permisos de aprobación
+        Route::middleware('checkrole:admin,super_admin')->group(function () {
+            Route::post('/informes/{informe}/aprobar', [InformeController::class, 'aprobar'])->name('informes.aprobar');
+            Route::post('/informes/{informe}/rechazar', [InformeController::class, 'rechazar'])->name('informes.rechazar');
+        });
+    });
+
     // ========================================
     // GESTIÓN DE PERMISOS - Solo super_admin
     // ========================================
