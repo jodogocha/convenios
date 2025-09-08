@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
             PermisosSeeder::class,
             UsuariosSeeder::class,
             ConfiguracionSistemaSeeder::class,
+            ConveniosSeeder::class, // Nuevo seeder agregado
+            InformesSeeder::class, // Nuevo seeder agregado
         ]);
     }
 }

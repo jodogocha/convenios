@@ -76,20 +76,6 @@
                     <i class="fas fa-shield-alt mr-2"></i>
                     Lista de Permisos ({{ $permisos->total() }} registros)
                 </h3>
-                <div class="card-tools">
-                    <a href="{{ route('permisos.create') }}" class="btn btn-success btn-sm">
-                        <i class="fas fa-plus mr-1"></i>
-                        Nuevo Permiso
-                    </a>
-                    <a href="{{ route('permisos.gestion-masiva') }}" class="btn btn-warning btn-sm ml-1">
-                        <i class="fas fa-layer-group mr-1"></i>
-                        Creación Masiva
-                    </a>
-                    <a href="{{ route('permisos.export', request()->query()) }}" class="btn btn-info btn-sm ml-1">
-                        <i class="fas fa-download mr-1"></i>
-                        Exportar CSV
-                    </a>
-                </div>
             </div>
             <div class="card-body p-0">
                 @if($permisos->count() > 0)

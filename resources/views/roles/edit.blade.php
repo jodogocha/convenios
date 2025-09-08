@@ -7,7 +7,7 @@
 @section('breadcrumbs')
 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
 <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Roles</a></li>
-<li class="breadcrumb-item"><a href="{{ route('roles.show', $rol) }}">{{ $rol->descripcion }}</a></li>
+<li class="breadcrumb-item"><a href="{{ route('roles.show', $role) }}">{{ $role->descripcion }}</a></li>
 <li class="breadcrumb-item active">Editar</li>
 @endsection
 
@@ -368,7 +368,7 @@ $(document).ready(function() {
         // Confirmación de cambios importantes
         var permisosActuales = {{ count($permisosAsignados) }};
         var permisosNuevos = $('.permission-checkbox:checked').length;
-        var usuariosAfectados = {{ $rol->usuarios->count() }};
+        var usuariosAfectados = {{ $role->usuarios->count() }};
         
         if (Math.abs(permisosActuales - permisosNuevos) > 0 && usuariosAfectados > 0) {
             e.preventDefault();
