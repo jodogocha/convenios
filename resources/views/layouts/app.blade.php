@@ -167,6 +167,43 @@
                         </li>
                         @endif
 
+                        @if(Auth::user()->tienePermiso('informes.leer') || Auth::user()->tienePermiso('convenios.leer'))
+                        <!-- Informes -->
+                        <li class="nav-item {{ request()->is('informes*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->is('informes*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-alt"></i>
+                                <p>
+                                    Informes
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('informes.index') }}" class="nav-link {{ request()->routeIs('informes.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Listar Informes</p>
+                                    </a>
+                                </li>
+                                @if(Auth::user()->tienePermiso('informes.crear') || Auth::user()->tienePermiso('convenios.crear'))
+                                <li class="nav-item">
+                                    <a href="{{ route('informes.create') }}" class="nav-link {{ request()->routeIs('informes.create') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Nuevo Informe</p>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->tienePermiso('informes.aprobar'))
+                                <li class="nav-item">
+                                    <a href="{{ route('informes.pendientes') }}" class="nav-link {{ request()->routeIs('informes.pendientes') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Pendientes de Revisión</p>
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
+
                         @if(Auth::user()->tienePermiso('usuarios.leer'))
                         <!-- Gestión de Usuarios -->
                         <li class="nav-item {{ request()->is('usuarios*') ? 'menu-open' : '' }}">

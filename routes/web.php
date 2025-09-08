@@ -116,13 +116,13 @@ Route::middleware(['auth'])->group(function () {
     // GESTIÓN DE INFORMES
     // ========================================
     Route::middleware('checkrole:usuario,admin,super_admin')->group(function () {
-        
+    
         // Rutas especiales que deben ir ANTES del resource para evitar conflictos
         Route::get('/informes/pendientes', [InformeController::class, 'pendientes'])->name('informes.pendientes');
         Route::get('/informes/exportar-excel', [InformeController::class, 'exportarExcel'])->name('informes.exportar-excel');
         Route::get('/informes/{informe}/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('informes.exportar-pdf');
         Route::get('/informes/{informe}/duplicar', [InformeController::class, 'duplicar'])->name('informes.duplicar');
-        Route::get('/api/convenios/{convenio}', [InformeController::class, 'getConvenio'])->name('informes.get-convenio');
+        Route::get('/api/convenios/{convenio}/datos', [InformeController::class, 'getConvenio'])->name('informes.get-convenio');
         
         // Resource completo de informes
         Route::resource('informes', InformeController::class);
