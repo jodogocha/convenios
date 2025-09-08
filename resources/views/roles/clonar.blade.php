@@ -99,7 +99,7 @@
                                        class="form-control @error('descripcion') is-invalid @enderror" 
                                        id="descripcion" 
                                        name="descripcion" 
-                                       value="{{ old('descripcion', 'Copia de ' . $rol->descripcion) }}" 
+                                       value="{{ old('descripcion', 'Copia de ' . $role->descripcion) }}" 
                                        required
                                        maxlength="255"
                                        placeholder="ej: Copia de Coordinador de Proyectos">

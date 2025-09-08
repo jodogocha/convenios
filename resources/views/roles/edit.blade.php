@@ -14,7 +14,7 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-10">
-        <form method="POST" action="{{ route('roles.update', $rol) }}">
+        <form method="POST" action="{{ route('roles.update', $role) }}">
             @csrf
             @method('PUT')
             
@@ -22,7 +22,7 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-edit mr-2"></i>
-                        Editar Rol: {{ $rol->descripcion }}
+                        Editar Rol: {{ $role->descripcion }}
                     </h3>
                 </div>
                 <div class="card-body">
@@ -38,7 +38,7 @@
                                        class="form-control @error('nombre') is-invalid @enderror" 
                                        id="nombre" 
                                        name="nombre" 
-                                       value="{{ old('nombre', $rol->nombre) }}" 
+                                       value="{{ old('nombre', $role->nombre) }}" 
                                        required
                                        maxlength="50"
                                        placeholder="ej: coordinador_proyectos">
@@ -65,7 +65,7 @@
                                        class="form-control @error('descripcion') is-invalid @enderror" 
                                        id="descripcion" 
                                        name="descripcion" 
-                                       value="{{ old('descripcion', $rol->descripcion) }}" 
+                                       value="{{ old('descripcion', $role->descripcion) }}" 
                                        required
                                        maxlength="255"
                                        placeholder="ej: Coordinador de Proyectos">
@@ -92,7 +92,7 @@
                                            id="activo" 
                                            name="activo" 
                                            value="1"
-                                           {{ old('activo', $rol->activo) ? 'checked' : '' }}>
+                                           {{ old('activo', $role->activo) ? 'checked' : '' }}>
                                     <label class="custom-control-label" for="activo">
                                         <i class="fas fa-toggle-on mr-1"></i>
                                         Rol activo
@@ -114,19 +114,19 @@
                                     <div class="col-md-4">
                                         <small>
                                             <strong>Creado:</strong> 
-                                            {{ $rol->created_at ? $rol->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
+                                            {{ $role->created_at ? $role->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
                                         </small>
                                     </div>
                                     <div class="col-md-4">
                                         <small>
                                             <strong>Última modificación:</strong> 
-                                            {{ $rol->updated_at ? $rol->updated_at->format('d/m/Y H:i:s') : 'No disponible' }}
+                                            {{ $role->updated_at ? $role->updated_at->format('d/m/Y H:i:s') : 'No disponible' }}
                                         </small>
                                     </div>
                                     <div class="col-md-4">
                                         <small>
                                             <strong>Usuarios asignados:</strong> 
-                                            <span class="badge badge-info">{{ $rol->usuarios->count() }}</span>
+                                            <span class="badge badge-info">{{ $role->usuarios->count() }}</span>
                                         </small>
                                     </div>
                                 </div>

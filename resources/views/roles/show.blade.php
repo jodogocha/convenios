@@ -7,7 +7,7 @@
 @section('breadcrumbs')
 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
 <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Roles</a></li>
-<li class="breadcrumb-item active">{{ $rol->descripcion }}</li>
+<li class="breadcrumb-item active">{{ $role->descripcion }}</li>
 @endsection
 
 @section('content')
@@ -19,16 +19,16 @@
                 <div class="text-center">
                     <div class="profile-role-icon mb-3">
                         <i class="fas fa-user-shield fa-5x 
-                           {{ $rol->nombre === 'super_admin' ? 'text-danger' : 
-                              ($rol->nombre === 'admin' ? 'text-warning' : 'text-primary') }}"></i>
+                           {{ $role->nombre === 'super_admin' ? 'text-danger' : 
+                              ($role->nombre === 'admin' ? 'text-warning' : 'text-primary') }}"></i>
                     </div>
-                    <h3 class="profile-username text-center">{{ $rol->descripcion }}</h3>
+                    <h3 class="profile-username text-center">{{ $role->descripcion }}</h3>
                     <p class="text-muted text-center">
-                        <span class="text-monospace">{{ $rol->nombre }}</span>
+                        <span class="text-monospace">{{ $role->nombre }}</span>
                     </p>
                     
                     <div class="text-center mb-3">
-                        @if($rol->activo)
+                        @if($role->activo)
                             <span class="badge badge-success badge-lg">
                                 <i class="fas fa-check-circle mr-1"></i>Rol Activo
                             </span>
@@ -39,12 +39,12 @@
                         @endif
                     </div>
 
-                    @if($rol->nombre === 'super_admin')
+                    @if($role->nombre === 'super_admin')
                         <div class="alert alert-danger alert-sm">
                             <i class="fas fa-shield-alt mr-1"></i>
                             Rol crítico del sistema
                         </div>
-                    @elseif($rol->nombre === 'admin')
+                    @elseif($role->nombre === 'admin')
                         <div class="alert alert-warning alert-sm">
                             <i class="fas fa-cog mr-1"></i>
                             Rol de administración
@@ -56,8 +56,8 @@
 
                 <strong><i class="fas fa-users mr-1"></i> Usuarios Asignados</strong>
                 <p class="text-muted mb-2">
-                    @if($rol->usuarios->count() > 0)
-                        <span class="badge badge-info">{{ $rol->usuarios->count() }} usuarios</span>
+                    @if($role->usuarios->count() > 0)
+                        <span class="badge badge-info">{{ $role->usuarios->count() }} usuarios</span>
                     @else
                         <span class="text-muted">Sin usuarios asignados</span>
                     @endif
@@ -65,8 +65,8 @@
 
                 <strong><i class="fas fa-shield-alt mr-1"></i> Permisos Asignados</strong>
                 <p class="text-muted mb-2">
-                    @if($rol->permisos->count() > 0)
-                        <span class="badge badge-primary">{{ $rol->permisos->count() }} permisos</span>
+                    @if($role->permisos->count() > 0)
+                        <span class="badge badge-primary">{{ $role->permisos->count() }} permisos</span>
                     @else
                         <span class="text-muted">Sin permisos asignados</span>
                     @endif
@@ -74,11 +74,11 @@
 
                 <strong><i class="fas fa-clock mr-1"></i> Fecha de Creación</strong>
                 <p class="text-muted mb-2">
-                    {{ $rol->created_at ? $rol->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
-                    @if($rol->created_at)
+                    {{ $role->created_at ? $role->created_at->format('d/m/Y H:i:s') : 'No disponible' }}
+                    @if($role->created_at)
                         <br>
                         <small class="text-muted">
-                            ({{ $rol->created_at->diffForHumans() }})
+                            ({{ $role->created_at->diffForHumans() }})
                         </small>
                     @endif
                 </p>
@@ -87,14 +87,14 @@
 
                 <!-- Acciones -->
                 <div class="d-grid gap-2">
-                    @if($rol->nombre !== 'super_admin')
-                    <a href="{{ route('roles.edit', $rol) }}" class="btn btn-warning btn-block">
+                    @if($role->nombre !== 'super_admin')
+                    <a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-block">
                         <i class="fas fa-edit mr-1"></i>
                         Editar Rol
                     </a>
                     @endif
 
-                    <a href="{{ route('roles.clonar', $rol) }}" class="btn btn-info btn-block">
+                    <a href="{{ route('roles.clonar', $role) }}" class="btn btn-info btn-block">
                         <i class="fas fa-copy mr-1"></i>
                         Clonar Rol
                     </a>
@@ -104,8 +104,8 @@
                         Volver a Lista
                     </a>
 
-                    @if(!in_array($rol->nombre, ['super_admin', 'admin', 'usuario']) && $rol->usuarios->count() === 0)
-                    <form method="POST" action="{{ route('roles.destroy', $rol) }}" class="d-inline">
+                    @if(!in_array($role->nombre, ['super_admin', 'admin', 'usuario']) && $role->usuarios->count() === 0)
+                    <form method="POST" action="{{ route('roles.destroy', $role) }}" class="d-inline">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger btn-block btn-delete">
@@ -138,16 +138,16 @@
                         <table class="table table-sm table-borderless">
                             <tr>
                                 <td class="font-weight-bold">Nombre:</td>
-                                <td><span class="text-monospace">{{ $rol->nombre }}</span></td>
+                                <td><span class="text-monospace">{{ $role->nombre }}</span></td>
                             </tr>
                             <tr>
                                 <td class="font-weight-bold">Descripción:</td>
-                                <td>{{ $rol->descripcion }}</td>
+                                <td>{{ $role->descripcion }}</td>
                             </tr>
                             <tr>
                                 <td class="font-weight-bold">Estado:</td>
                                 <td>
-                                    @if($rol->activo)
+                                    @if($role->activo)
                                         <span class="badge badge-success">Activo</span>
                                     @else
                                         <span class="badge badge-danger">Inactivo</span>
@@ -156,7 +156,7 @@
                             </tr>
                             <tr>
                                 <td class="font-weight-bold">ID de Rol:</td>
-                                <td><span class="text-monospace">#{{ $rol->id }}</span></td>
+                                <td><span class="text-monospace">#{{ $role->id }}</span></td>
                             </tr>
                         </table>
                     </div>
@@ -169,13 +169,13 @@
                             <tr>
                                 <td class="font-weight-bold">Usuarios Asignados:</td>
                                 <td>
-                                    <span class="badge badge-info">{{ $rol->usuarios->count() }}</span>
+                                    <span class="badge badge-info">{{ $role->usuarios->count() }}</span>
                                 </td>
                             </tr>
                             <tr>
                                 <td class="font-weight-bold">Permisos Asignados:</td>
                                 <td>
-                                    <span class="badge badge-primary">{{ $rol->permisos->count() }}</span>
+                                    <span class="badge badge-primary">{{ $role->permisos->count() }}</span>
                                 </td>
                             </tr>
                             <tr>
@@ -187,8 +187,8 @@
                             <tr>
                                 <td class="font-weight-bold">Última Modificación:</td>
                                 <td>
-                                    @if($rol->updated_at)
-                                        {{ $rol->updated_at->format('d/m/Y H:i') }}
+                                    @if($role->updated_at)
+                                        {{ $role->updated_at->format('d/m/Y H:i') }}
                                     @else
                                         No disponible
                                     @endif
@@ -210,7 +210,7 @@
                 </h3>
                 <div class="card-tools">
                     <span class="badge badge-primary">
-                        {{ $rol->permisos->count() }} permisos en {{ $permisosPorModulo->count() }} módulos
+                        {{ $role->permisos->count() }} permisos en {{ $permisosPorModulo->count() }} módulos
                     </span>
                 </div>
             </div>
@@ -259,8 +259,8 @@
                     <p class="text-muted">
                         Este rol no tiene permisos asignados actualmente.
                     </p>
-                    @if($rol->nombre !== 'super_admin')
-                    <a href="{{ route('roles.edit', $rol) }}" class="btn btn-primary">
+                    @if($role->nombre !== 'super_admin')
+                    <a href="{{ route('roles.edit', $role) }}" class="btn btn-primary">
                         <i class="fas fa-edit mr-1"></i>
                         Asignar Permisos
                     </a>
@@ -279,12 +279,12 @@
                 </h3>
                 <div class="card-tools">
                     <span class="badge badge-info">
-                        {{ $rol->usuarios->count() }} usuarios
+                        {{ $role->usuarios->count() }} usuarios
                     </span>
                 </div>
             </div>
             <div class="card-body">
-                @if($rol->usuarios->count() > 0)
+                @if($role->usuarios->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
                         <thead class="thead-light">
@@ -297,7 +297,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($rol->usuarios as $usuario)
+                            @foreach($role->usuarios as $usuario)
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">

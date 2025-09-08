@@ -91,15 +91,17 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('checkrole:super_admin')->group(function () {
         // Rutas especiales que deben ir ANTES del resource
         Route::get('/roles/export', [RolController::class, 'export'])->name('roles.export');
-        Route::get('/roles/{rol}/clonar', [RolController::class, 'clonar'])->name('roles.clonar');
-        Route::post('/roles/{rol}/clonar', [RolController::class, 'procesarClon'])->name('roles.procesar-clon');
-        Route::post('/roles/{rol}/toggle-estado', [RolController::class, 'toggleEstado'])->name('roles.toggle-estado');
+        Route::get('/roles/{role}/clonar', [RolController::class, 'clonar'])->name('roles.clonar');
+        Route::post('/roles/{role}/clonar', [RolController::class, 'procesarClon'])->name('roles.procesar-clon');
+        Route::post('/roles/{role}/toggle-estado', [RolController::class, 'toggleEstado'])->name('roles.toggle-estado');
         
         // Resource completo de roles
-        Route::resource('roles', RolController::class);
+        Route::resource('roles', RolController::class)->parameters([
+            'roles' => 'role'
+        ]);
         
         // API para obtener permisos de un rol
-        Route::get('/api/roles/{rol}/permisos', [RolController::class, 'getPermisos'])->name('roles.api.permisos');
+        Route::get('/api/roles/{role}/permisos', [RolController::class, 'getPermisos'])->name('roles.api.permisos');
     });
     
     // ========================================

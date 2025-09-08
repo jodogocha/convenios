@@ -98,40 +98,40 @@ class RolController extends Controller
     /**
      * Mostrar rol específico
      */
-    public function show(Rol $rol)
+    public function show(Rol $role)  // Cambiado de $rol a $role
     {
-        $rol->load(['permisos', 'usuarios']);
-        $permisosPorModulo = $rol->permisos->groupBy('modulo');
+        $role->load(['permisos', 'usuarios']);
+        $permisosPorModulo = $role->permisos->groupBy('modulo');
 
-        return view('roles.show', compact('rol', 'permisosPorModulo'));
+        return view('roles.show', compact('role', 'permisosPorModulo'));
     }
 
     /**
      * Mostrar formulario de edición
      */
-    public function edit(Rol $rol)
+    public function edit(Rol $role)  // Cambiado de $rol a $role
     {
         // No permitir editar el rol super_admin
-        if ($rol->nombre === 'super_admin') {
-            return redirect()->route('roles.show', $rol)
+        if ($role->nombre === 'super_admin') {
+            return redirect()->route('roles.show', $role)
                            ->with('error', 'El rol super_admin no puede ser editado por seguridad.');
         }
 
         $permisos = Permiso::activos()->orderBy('modulo')->orderBy('nombre')->get();
         $permisosPorModulo = $permisos->groupBy('modulo');
-        $permisosAsignados = $rol->permisos->pluck('id')->toArray();
+        $permisosAsignados = $role->permisos->pluck('id')->toArray();
 
-        return view('roles.edit', compact('rol', 'permisos', 'permisosPorModulo', 'permisosAsignados'));
+        return view('roles.edit', compact('role', 'permisos', 'permisosPorModulo', 'permisosAsignados'));
     }
 
     /**
      * Actualizar rol
      */
-    public function update(Request $request, Rol $rol)
+    public function update(Request $request, Rol $role)  // Cambiado de $rol a $role
     {
         // No permitir editar el rol super_admin
-        if ($rol->nombre === 'super_admin') {
-            return redirect()->route('roles.show', $rol)
+        if ($role->nombre === 'super_admin') {
+            return redirect()->route('roles.show', $role)
                            ->with('error', 'El rol super_admin no puede ser editado por seguridad.');
         }
 
@@ -141,7 +141,7 @@ class RolController extends Controller
                 'string',
                 'max:50',
                 'regex:/^[a-z_]+$/',
-                Rule::unique('roles')->ignore($rol->id)
+                Rule::unique('roles')->ignore($role->id)
             ],
             'descripcion' => 'required|string|max:255',
             'activo' => 'boolean',
@@ -155,22 +155,22 @@ class RolController extends Controller
             'permisos.*.exists' => 'Uno o más permisos seleccionados no son válidos.'
         ]);
 
-        $valoresAnteriores = $rol->toArray();
+        $valoresAnteriores = $role->toArray();
 
-        $rol->update([
+        $role->update([
             'nombre' => $request->nombre,
             'descripcion' => $request->descripcion,
             'activo' => $request->boolean('activo', true)
         ]);
 
         // Sincronizar permisos
-        $permisosAnteriores = $rol->permisos->pluck('id')->toArray();
+        $permisosAnteriores = $role->permisos->pluck('id')->toArray();
         $permisosNuevos = $request->get('permisos', []);
         
-        $rol->permisos()->sync($permisosNuevos);
+        $role->permisos()->sync($permisosNuevos);
 
         // Registrar auditoría
-        $cambios = $rol->getChanges();
+        $cambios = $role->getChanges();
         if (!empty($cambios) || $permisosAnteriores != $permisosNuevos) {
             $cambios['permisos_anteriores'] = $permisosAnteriores;
             $cambios['permisos_nuevos'] = $permisosNuevos;
@@ -179,47 +179,47 @@ class RolController extends Controller
                 Auth::id(),
                 'actualizar_rol',
                 'roles',
-                $rol->id,
+                $role->id,
                 $valoresAnteriores,
                 $cambios
             );
         }
 
-        return redirect()->route('roles.show', $rol)
-                        ->with('success', "Rol '{$rol->descripcion}' actualizado correctamente.");
+        return redirect()->route('roles.show', $role)
+                        ->with('success', "Rol '{$role->descripcion}' actualizado correctamente.");
     }
 
     /**
      * Eliminar rol
      */
-    public function destroy(Rol $rol)
+    public function destroy(Rol $role)  // Cambiado de $rol a $role
     {
         // No permitir eliminar ciertos roles críticos
-        if (in_array($rol->nombre, ['super_admin', 'admin', 'usuario'])) {
+        if (in_array($role->nombre, ['super_admin', 'admin', 'usuario'])) {
             return redirect()->route('roles.index')
                            ->with('error', 'No se puede eliminar este rol porque es crítico para el sistema.');
         }
 
         // Verificar si tiene usuarios asignados
-        if ($rol->usuarios()->count() > 0) {
+        if ($role->usuarios()->count() > 0) {
             return redirect()->route('roles.index')
-                           ->with('error', "No se puede eliminar el rol '{$rol->descripcion}' porque tiene usuarios asignados.");
+                           ->with('error', "No se puede eliminar el rol '{$role->descripcion}' porque tiene usuarios asignados.");
         }
 
-        $nombre = $rol->descripcion;
-        $datosAnteriores = $rol->toArray();
+        $nombre = $role->descripcion;
+        $datosAnteriores = $role->toArray();
 
         // Registrar auditoría antes de eliminar
         Auditoria::registrar(
             Auth::id(),
             'eliminar_rol',
             'roles',
-            $rol->id,
+            $role->id,
             $datosAnteriores,
             null
         );
 
-        $rol->delete();
+        $role->delete();
 
         return redirect()->route('roles.index')
                         ->with('success', "Rol '{$nombre}' eliminado correctamente.");
@@ -228,52 +228,52 @@ class RolController extends Controller
     /**
      * Cambiar estado del rol (activar/desactivar)
      */
-    public function toggleEstado(Rol $rol)
+    public function toggleEstado(Rol $role)  // Cambiado de $rol a $role
     {
         // No permitir desactivar roles críticos
-        if (in_array($rol->nombre, ['super_admin', 'admin'])) {
+        if (in_array($role->nombre, ['super_admin', 'admin'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'No se puede desactivar este rol porque es crítico para el sistema.'
             ], 400);
         }
 
-        $estadoAnterior = $rol->activo;
-        $rol->update(['activo' => !$rol->activo]);
+        $estadoAnterior = $role->activo;
+        $role->update(['activo' => !$role->activo]);
 
         // Registrar auditoría
         Auditoria::registrar(
             Auth::id(),
             'cambiar_estado_rol',
             'roles',
-            $rol->id,
+            $role->id,
             ['activo' => $estadoAnterior],
-            ['activo' => $rol->activo]
+            ['activo' => $role->activo]
         );
 
         return response()->json([
             'success' => true,
             'message' => 'Estado del rol actualizado correctamente',
-            'nuevo_estado' => $rol->activo
+            'nuevo_estado' => $role->activo
         ]);
     }
 
     /**
      * Clonar rol (crear una copia)
      */
-    public function clonar(Rol $rol)
+    public function clonar(Rol $role)  // Cambiado de $rol a $role
     {
         $permisos = Permiso::activos()->orderBy('modulo')->orderBy('nombre')->get();
         $permisosPorModulo = $permisos->groupBy('modulo');
-        $permisosAsignados = $rol->permisos->pluck('id')->toArray();
+        $permisosAsignados = $role->permisos->pluck('id')->toArray();
 
-        return view('roles.clonar', compact('rol', 'permisos', 'permisosPorModulo', 'permisosAsignados'));
+        return view('roles.clonar', compact('role', 'permisos', 'permisosPorModulo', 'permisosAsignados'));
     }
 
     /**
      * Procesar clonación de rol
      */
-    public function procesarClon(Request $request, Rol $rolOriginal)
+    public function procesarClon(Request $request, Rol $rolOriginal)  // Mantenemos rolOriginal para claridad
     {
         $request->validate([
             'nombre' => 'required|string|max:50|unique:roles,nombre|regex:/^[a-z_]+$/',
@@ -317,11 +317,11 @@ class RolController extends Controller
     /**
      * API: Obtener permisos de un rol
      */
-    public function getPermisos(Rol $rol)
+    public function getPermisos(Rol $role)  // Cambiado de $rol a $role
     {
         return response()->json([
-            'rol' => $rol->nombre,
-            'permisos' => $rol->permisos->pluck('nombre')
+            'rol' => $role->nombre,
+            'permisos' => $role->permisos->pluck('nombre')
         ]);
     }
 
@@ -370,17 +370,17 @@ class RolController extends Controller
                 'Fecha Creación'
             ], ';');
 
-            foreach ($roles as $rol) {
-                $permisos = $rol->permisos->pluck('descripcion')->implode(', ');
+            foreach ($roles as $role) {
+                $permisos = $role->permisos->pluck('descripcion')->implode(', ');
                 
                 fputcsv($file, [
-                    $rol->id,
-                    $rol->nombre,
-                    $rol->descripcion,
-                    $rol->activo ? 'Activo' : 'Inactivo',
-                    $rol->usuarios_count,
+                    $role->id,
+                    $role->nombre,
+                    $role->descripcion,
+                    $role->activo ? 'Activo' : 'Inactivo',
+                    $role->usuarios_count,
                     $permisos,
-                    $rol->created_at->format('d/m/Y H:i:s')
+                    $role->created_at->format('d/m/Y H:i:s')
                 ], ';');
             }
 

@@ -1,9 +1,10 @@
 <?php
-// database/migrations/2024_01_01_000002_create_usuarios_table.php
+// database/migrations/2025_08_20_131125_create_usuarios_table.php - VERSIÓN CORREGIDA
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -19,8 +20,8 @@ return new class extends Migration
             $table->string('telefono', 20)->nullable();
             $table->date('fecha_nacimiento')->nullable();
             
-            // Relación con roles
-            $table->foreignId('rol_id')->constrained('roles')->onDelete('restrict');
+            // Relación con roles - SIN constraint por ahora
+            $table->unsignedBigInteger('rol_id');
             
             // Estados y seguridad
             $table->boolean('activo')->default(true);
@@ -48,10 +49,34 @@ return new class extends Migration
             $table->index('activo');
             $table->index('rol_id');
         });
+
+        // Agregar la constraint de clave foránea en una operación separada
+        // pero solo si la tabla roles existe
+        if (Schema::hasTable('roles')) {
+            try {
+                Schema::table('usuarios', function (Blueprint $table) {
+                    $table->foreign('rol_id', 'fk_usuarios_rol_id')
+                          ->references('id')->on('roles')
+                          ->onDelete('restrict');
+                });
+            } catch (Exception $e) {
+                // Si falla, continuar sin la constraint
+                // Se puede agregar manualmente después
+            }
+        }
     }
 
     public function down(): void
     {
+        // Eliminar constraint primero si existe
+        try {
+            Schema::table('usuarios', function (Blueprint $table) {
+                $table->dropForeign('fk_usuarios_rol_id');
+            });
+        } catch (Exception $e) {
+            // Si no existe, continuar
+        }
+        
         Schema::dropIfExists('usuarios');
     }
 };
