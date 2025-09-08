@@ -157,13 +157,13 @@
         </div>
     </div>
 
-    <!-- Gráfico de usuarios registrados por mes -->
+    <!-- Gráfico de convenios registrados por mes -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-chart-line mr-2"></i>
-                    Usuarios Registrados (Últimos 6 meses)
+                    Convenios Registrados (Últimos 12 meses)
                 </h3>
             </div>
             <div class="card-body">
@@ -289,9 +289,9 @@
                     <div class="row text-center mt-2">
                         <div class="col-12">
                             <small class="text-muted">
-                                <i class="fas fa-user-plus mr-1"></i>
-                                Nuevos esta semana: 
-                                <span class="font-weight-bold text-info" id="usuariosRecientes">
+                                <i class="fas fa-handshake mr-1"></i>
+                                Nuevos convenios esta semana: 
+                                <span class="font-weight-bold text-info" id="conveniosRecientes">
                                     <i class="fas fa-spinner fa-spin"></i>
                                 </span>
                             </small>
@@ -547,7 +547,6 @@ function cargarEstadisticasUsuarios() {
             // Actualizar resumen de usuarios en panel lateral
             $('#usuariosActivos').text(data.activos || 0);
             $('#usuariosInactivos').text(data.inactivos || 0);
-            $('#usuariosRecientes').text(data.nuevos_ultimos_7_dias || 0);
             
             // Estadísticas adicionales para super_admin
             $('#activosUltimos30').text(data.activos_ultimos_30_dias || 0);
@@ -559,9 +558,19 @@ function cargarEstadisticasUsuarios() {
             console.error('Error al cargar estadísticas de usuarios:', error);
             $('#usuariosActivos').text('N/A');
             $('#usuariosInactivos').text('N/A');
-            $('#usuariosRecientes').text('N/A');
             $('#activosUltimos30').text('N/A');
             $('#usuariosBloqueados').text('N/A');
+        });
+
+    // Cargar estadísticas de convenios recientes
+    $.get('/api/dashboard/estadisticas')
+        .done(function(data) {
+            // Calcular convenios de esta semana (aproximado)
+            var conveniosEstaSemana = Math.floor((data.convenios_mes_actual || 0) / 4);
+            $('#conveniosRecientes').text(conveniosEstaSemana);
+        })
+        .fail(function() {
+            $('#conveniosRecientes').text('N/A');
         });
 }
 
@@ -592,7 +601,7 @@ function cargarActividadReciente() {
 }
 
 function cargarGraficos() {
-    // Gráfico de convenios por estado (datos simulados por ahora)
+    // Gráfico de convenios por estado
     $.get('/api/dashboard/estadisticas')
         .done(function(data) {
             var ctx = document.getElementById('conveniosEstadoChart');
@@ -600,14 +609,15 @@ function cargarGraficos() {
                 new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Activos', 'Pendientes', 'Vencidos'],
+                        labels: ['Activos', 'Pendientes', 'Por Vencer', 'Borradores'],
                         datasets: [{
                             data: [
                                 data.convenios_activos || 0, 
                                 data.convenios_pendientes || 0, 
-                                data.convenios_por_vencer || 0
+                                data.convenios_por_vencer || 0,
+                                data.convenios_borradores || 0
                             ],
-                            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                            backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d'],
                             borderWidth: 0
                         }]
                     },
@@ -627,8 +637,8 @@ function cargarGraficos() {
             console.log('Error al cargar gráfico de convenios por estado');
         });
 
-    // Gráfico de usuarios por mes
-    $.get('/api/dashboard/usuarios-mes')
+    // Gráfico de convenios por mes (últimos 12 meses)
+    $.get('/api/dashboard/convenios-mes')
         .done(function(data) {
             var ctx = document.getElementById('conveniosMesChart');
             if (ctx) {
@@ -637,7 +647,7 @@ function cargarGraficos() {
                     data: {
                         labels: data.labels || [],
                         datasets: [{
-                            label: 'Usuarios Registrados',
+                            label: 'Convenios Registrados',
                             data: data.values || [],
                             borderColor: '#007bff',
                             backgroundColor: 'rgba(0, 123, 255, 0.1)',
@@ -667,7 +677,7 @@ function cargarGraficos() {
             }
         })
         .fail(function() {
-            console.log('Error al cargar gráfico de usuarios por mes');
+            console.log('Error al cargar gráfico de convenios por mes');
         });
 
     // Gráfico de logins por día (opcional)
@@ -684,7 +694,7 @@ function cargarGraficos() {
 // Función para actualizar manualmente las estadísticas
 window.actualizarEstadisticas = function() {
     // Mostrar spinners
-    $('#totalUsuarios, #usuariosActivos, #usuariosInactivos, #usuariosRecientes').html('<i class="fas fa-spinner fa-spin"></i>');
+    $('#totalUsuarios, #usuariosActivos, #usuariosInactivos, #conveniosRecientes').html('<i class="fas fa-spinner fa-spin"></i>');
     $('#badgePendientes').html('<i class="fas fa-spinner fa-spin"></i>');
     $('#loginsHoy, #totalRoles, #activosUltimos30, #usuariosBloqueados').html('<i class="fas fa-spinner fa-spin"></i>');
     

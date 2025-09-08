@@ -136,6 +136,56 @@ class DashboardApiController extends Controller
     }
 
     /**
+     * Gráfico de convenios registrados por mes (últimos 12 meses)
+     */
+    public function conveniosPorMes()
+    {
+        try {
+            $convenios = \App\Models\Convenio::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as total')
+                ->where('created_at', '>=', now()->subMonths(12))
+                ->groupBy('year', 'month')
+                ->orderBy('year')
+                ->orderBy('month')
+                ->get();
+
+            $labels = [];
+            $values = [];
+            
+            // Generar los últimos 12 meses
+            for ($i = 11; $i >= 0; $i--) {
+                $fecha = now()->subMonths($i);
+                $year = $fecha->year;
+                $month = $fecha->month;
+                
+                // Formato más corto para las etiquetas
+                $labels[] = $fecha->format('M Y');
+                
+                $convenio = $convenios->first(function ($item) use ($year, $month) {
+                    return $item->year == $year && $item->month == $month;
+                });
+                
+                $values[] = $convenio ? $convenio->total : 0;
+            }
+
+            return response()->json([
+                'labels' => $labels,
+                'values' => $values,
+                'total' => array_sum($values)
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener convenios por mes: ' . $e->getMessage());
+            
+            return response()->json([
+                'labels' => [],
+                'values' => [],
+                'total' => 0,
+                'error' => 'Error al cargar datos'
+            ], 500);
+        }
+    }
+
+    /**
      * Actividad de login por días (últimos 7 días)
      */
     public function loginsPorDia()

@@ -485,6 +485,365 @@ class InformeController extends Controller
     }
 
     /**
+     * Dashboard específico de informes con métricas avanzadas
+     */
+    public function dashboard()
+    {
+        if (!Auth::user()->tienePermiso('informes.dashboard')) {
+            return redirect()->route('informes.index')
+                        ->with('error', 'No tiene permisos para ver el dashboard de informes.');
+        }
+
+        $metricas = Informe::getMetricasDashboard();
+        
+        // Informes recientes del usuario
+        $informesRecientes = Informe::where('usuario_creador_id', Auth::id())
+                                ->orderBy('created_at', 'desc')
+                                ->limit(5)
+                                ->get();
+        
+        // Informes urgentes (solo para revisores)
+        $informesUrgentes = collect();
+        if (Auth::user()->tienePermiso('informes.aprobar')) {
+            $informesUrgentes = Informe::urgentes()
+                                    ->with(['usuarioCreador', 'convenio'])
+                                    ->limit(10)
+                                    ->get();
+        }
+        
+        // Estadísticas por unidad académica
+        $estadisticasPorUnidad = Informe::selectRaw('unidad_academica, COUNT(*) as total, 
+                                                SUM(CASE WHEN convenio_ejecutado = 1 THEN 1 ELSE 0 END) as ejecutados')
+                                    ->whereYear('fecha_presentacion', now()->year)
+                                    ->groupBy('unidad_academica')
+                                    ->orderBy('total', 'desc')
+                                    ->get();
+        
+        // Tendencias mensuales
+        $tendenciasMensuales = Informe::selectRaw('MONTH(fecha_presentacion) as mes, COUNT(*) as total')
+                                    ->whereYear('fecha_presentacion', now()->year)
+                                    ->groupBy('mes')
+                                    ->orderBy('mes')
+                                    ->get()
+                                    ->pluck('total', 'mes');
+        
+        return view('informes.dashboard', compact(
+            'metricas', 
+            'informesRecientes', 
+            'informesUrgentes', 
+            'estadisticasPorUnidad',
+            'tendenciasMensuales'
+        ));
+    }
+
+    /**
+     * Validar informe antes de guardar/enviar
+     */
+    public function validar(Request $request, Informe $informe)
+    {
+        $errores = $informe->validarSegunContexto();
+        $progreso = $informe->progreso_completitud;
+        $recomendaciones = $informe->recomendaciones;
+        
+        return response()->json([
+            'valido' => empty($errores),
+            'errores' => $errores,
+            'progreso' => $progreso,
+            'recomendaciones' => $recomendaciones,
+            'puede_enviar' => $informe->puedeSerEnviado()
+        ]);
+    }
+
+    /**
+     * Obtener notificaciones del informe
+     */
+    public function notificaciones(Informe $informe)
+    {
+        $notificaciones = $informe->generarNotificaciones();
+        
+        return response()->json([
+            'notificaciones' => $notificaciones,
+            'count' => count($notificaciones)
+        ]);
+    }
+
+    /**
+     * Generar reporte comparativo entre informes
+     */
+    public function reporteComparativo(Request $request)
+    {
+        $request->validate([
+            'informe_ids' => 'required|array|min:2|max:10',
+            'informe_ids.*' => 'exists:informes,id'
+        ]);
+
+        $informes = Informe::whereIn('id', $request->informe_ids)
+                        ->with(['convenio', 'usuarioCreador'])
+                        ->get();
+
+        if ($informes->count() < 2) {
+            return back()->with('error', 'Debe seleccionar al menos 2 informes para comparar.');
+        }
+
+        $comparacion = [
+            'informes' => $informes,
+            'metricas' => [
+                'total_actividades' => $informes->sum('numero_actividades_realizadas'),
+                'promedio_actividades' => $informes->where('convenio_ejecutado', true)->avg('numero_actividades_realizadas'),
+                'ejecutados_porcentaje' => ($informes->where('convenio_ejecutado', true)->count() / $informes->count()) * 100,
+                'con_evidencias' => $informes->whereNotNull('enlace_google_drive')->count(),
+                'unidades_involucradas' => $informes->pluck('unidad_academica')->unique()->count()
+            ]
+        ];
+
+        return view('informes.reporte-comparativo', compact('comparacion'));
+    }
+
+    /**
+     * Exportar múltiples informes en un solo PDF
+     */
+    public function exportarMultiplesPdf(Request $request)
+    {
+        $request->validate([
+            'informe_ids' => 'required|array|min:1|max:20',
+            'informe_ids.*' => 'exists:informes,id'
+        ]);
+
+        $informes = Informe::whereIn('id', $request->informe_ids)
+                        ->with(['convenio', 'usuarioCreador', 'usuarioRevisor'])
+                        ->orderBy('fecha_presentacion', 'desc')
+                        ->get();
+
+        $pdf = Pdf::loadView('informes.pdf-multiple', compact('informes'));
+        
+        $filename = 'informes_multiples_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+        
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Generar estadísticas avanzadas
+     */
+    public function estadisticasAvanzadas(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio', now()->subYear()->format('Y-m-d'));
+        $fechaFin = $request->get('fecha_fin', now()->format('Y-m-d'));
+        
+        $query = Informe::whereBetween('fecha_presentacion', [$fechaInicio, $fechaFin]);
+        
+        $estadisticas = [
+            'resumen_general' => [
+                'total_informes' => $query->count(),
+                'ejecutados' => $query->where('convenio_ejecutado', true)->count(),
+                'no_ejecutados' => $query->where('convenio_ejecutado', false)->count(),
+                'aprobados' => $query->where('estado', 'aprobado')->count(),
+                'pendientes' => $query->where('estado', 'enviado')->count(),
+            ],
+            
+            'por_unidad_academica' => $query->selectRaw('unidad_academica, 
+                                                    COUNT(*) as total,
+                                                    SUM(CASE WHEN convenio_ejecutado = 1 THEN 1 ELSE 0 END) as ejecutados,
+                                                    SUM(CASE WHEN estado = "aprobado" THEN 1 ELSE 0 END) as aprobados')
+                                        ->groupBy('unidad_academica')
+                                        ->get(),
+            
+            'por_mes' => $query->selectRaw('YEAR(fecha_presentacion) as año, 
+                                        MONTH(fecha_presentacion) as mes,
+                                        COUNT(*) as total')
+                            ->groupBy('año', 'mes')
+                            ->orderBy('año', 'desc')
+                            ->orderBy('mes', 'desc')
+                            ->get(),
+            
+            'actividades_promedio' => $query->where('convenio_ejecutado', true)
+                                        ->whereNotNull('numero_actividades_realizadas')
+                                        ->avg('numero_actividades_realizadas'),
+            
+            'tiempo_promedio_revision' => Informe::where('estado', 'aprobado')
+                                                ->whereNotNull('fecha_revision')
+                                                ->selectRaw('AVG(DATEDIFF(fecha_revision, updated_at)) as dias_promedio')
+                                                ->value('dias_promedio'),
+        ];
+        
+        return response()->json($estadisticas);
+    }
+
+    /**
+     * Clonar informe con datos base
+     */
+    public function clonar(Informe $informe)
+    {
+        // Verificar permisos
+        if ($informe->usuario_creador_id !== Auth::id() && !Auth::user()->tieneRol('super_admin')) {
+            return redirect()->route('informes.index')
+                        ->with('error', 'No tiene permisos para clonar este informe.');
+        }
+
+        return view('informes.clonar', compact('informe'));
+    }
+
+    /**
+     * Procesar clonación de informe
+     */
+    public function procesarClon(Request $request, Informe $informe)
+    {
+        $request->validate([
+            'mantener_convenio' => 'boolean',
+            'mantener_datos_institucionales' => 'boolean',
+            'mantener_coordinadores' => 'boolean',
+            'nuevo_periodo_evaluado' => 'required|string|max:500',
+            'nueva_fecha_presentacion' => 'required|date'
+        ]);
+
+        $nuevoInforme = $informe->replicate();
+        
+        // Resetear campos específicos
+        $nuevoInforme->estado = 'borrador';
+        $nuevoInforme->usuario_creador_id = Auth::id();
+        $nuevoInforme->usuario_revisor_id = null;
+        $nuevoInforme->fecha_revision = null;
+        $nuevoInforme->observaciones = null;
+        
+        // Aplicar opciones de clonación
+        if (!$request->boolean('mantener_convenio')) {
+            $nuevoInforme->convenio_id = null;
+            $nuevoInforme->institucion_co_celebrante = '';
+        }
+        
+        if (!$request->boolean('mantener_datos_institucionales')) {
+            $nuevoInforme->unidad_academica = '';
+            $nuevoInforme->carrera = '';
+            $nuevoInforme->dependencia_responsable = '';
+        }
+        
+        if (!$request->boolean('mantener_coordinadores')) {
+            $nuevoInforme->coordinadores_designados = [];
+        }
+        
+        // Aplicar nuevos valores
+        $nuevoInforme->periodo_evaluado = $request->nuevo_periodo_evaluado;
+        $nuevoInforme->fecha_presentacion = $request->nueva_fecha_presentacion;
+        
+        // Limpiar datos de ejecución
+        $nuevoInforme->numero_actividades_realizadas = null;
+        $nuevoInforme->logros_obtenidos = null;
+        $nuevoInforme->beneficios_alcanzados = null;
+        $nuevoInforme->dificultades_incidentes = null;
+        $nuevoInforme->motivos_no_ejecucion = null;
+        $nuevoInforme->enlace_google_drive = null;
+        
+        $nuevoInforme->save();
+
+        return redirect()->route('informes.edit', $nuevoInforme)
+                        ->with('success', 'Informe clonado correctamente. Complete los datos necesarios.');
+    }
+
+    /**
+     * Obtener informes por rango de fechas (API)
+     */
+    public function informesPorFecha(Request $request)
+    {
+        $request->validate([
+            'fecha_inicio' => 'required|date',
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio'
+        ]);
+
+        $informes = Informe::with(['convenio', 'usuarioCreador'])
+                        ->whereBetween('fecha_presentacion', [
+                            $request->fecha_inicio, 
+                            $request->fecha_fin
+                        ])
+                        ->orderBy('fecha_presentacion', 'desc')
+                        ->get();
+
+        return response()->json([
+            'informes' => $informes,
+            'total' => $informes->count(),
+            'ejecutados' => $informes->where('convenio_ejecutado', true)->count(),
+            'aprobados' => $informes->where('estado', 'aprobado')->count()
+        ]);
+    }
+
+    /**
+     * Marcar informe como favorito
+     */
+    public function toggleFavorito(Informe $informe)
+    {
+        $usuario = Auth::user();
+        
+        // Aquí podrías implementar una tabla de favoritos
+        // Por ahora, usaremos metadata del usuario
+        $favoritos = $usuario->metadata['informes_favoritos'] ?? [];
+        
+        if (in_array($informe->id, $favoritos)) {
+            $favoritos = array_diff($favoritos, [$informe->id]);
+            $mensaje = 'Informe removido de favoritos';
+        } else {
+            $favoritos[] = $informe->id;
+            $mensaje = 'Informe agregado a favoritos';
+        }
+        
+        $metadata = $usuario->metadata ?? [];
+        $metadata['informes_favoritos'] = array_values($favoritos);
+        $usuario->update(['metadata' => $metadata]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => $mensaje,
+            'es_favorito' => in_array($informe->id, $favoritos)
+        ]);
+    }
+
+    /**
+     * Obtener plantilla de informe basada en uno existente
+     */
+    public function obtenerPlantilla(Informe $informe)
+    {
+        // Crear plantilla con datos básicos
+        $plantilla = [
+            'tipo_convenio' => $informe->tipo_convenio,
+            'unidad_academica' => $informe->unidad_academica,
+            'dependencia_responsable' => $informe->dependencia_responsable,
+            'coordinadores_designados' => $informe->coordinadores_designados,
+            'estructura_logros' => $this->extraerEstructura($informe->logros_obtenidos),
+            'estructura_beneficios' => $this->extraerEstructura($informe->beneficios_alcanzados),
+        ];
+        
+        return response()->json([
+            'plantilla' => $plantilla,
+            'mensaje' => 'Plantilla generada basada en el informe #' . $informe->id
+        ]);
+    }
+
+    /**
+     * Extraer estructura de texto para plantillas
+     */
+    private function extraerEstructura($texto)
+    {
+        if (empty($texto)) return '';
+        
+        // Extraer patrones comunes y crear estructura
+        $lineas = explode("\n", $texto);
+        $estructura = [];
+        
+        foreach ($lineas as $linea) {
+            $linea = trim($linea);
+            if (!empty($linea)) {
+                // Detectar si es título, subtítulo o punto
+                if (str_starts_with($linea, '•') || str_starts_with($linea, '-')) {
+                    $estructura[] = '• [Punto específico]';
+                } elseif (strlen($linea) < 50 && !str_contains($linea, '.')) {
+                    $estructura[] = '[Título o subtema]';
+                } else {
+                    $estructura[] = '[Descripción detallada]';
+                }
+            }
+        }
+        
+        return implode("\n", array_unique($estructura));
+    }
+
+    /**
      * API: Estadísticas de informes para dashboard
      */
     public function estadisticasApi()

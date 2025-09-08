@@ -63,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/actividad-reciente', [DashboardApiController::class, 'actividadReciente']);
         Route::get('/estadisticas-usuarios', [DashboardApiController::class, 'estadisticasUsuarios']);
         Route::get('/usuarios-mes', [DashboardApiController::class, 'usuariosPorMes']);
+        Route::get('/convenios-mes', [DashboardApiController::class, 'conveniosPorMes']); // NUEVA LÍNEA
         Route::get('/logins-dia', [DashboardApiController::class, 'loginsPorDia']);
         Route::get('/estadisticas-login', [DashboardApiController::class, 'estadisticasLogin']);
     });
