@@ -89,7 +89,15 @@ Route::middleware(['auth'])->group(function () {
         // Ruta para toggle estado (debe ir ANTES del resource)
         Route::post('usuarios/{usuario}/toggle-estado', [UsuarioController::class, 'toggleEstado'])
             ->name('usuarios.toggle-estado');
-            
+       
+        // Rutas adicionales para informes
+        Route::get('/informes/dashboard', [InformeController::class, 'dashboard'])->name('informes.dashboard');
+        Route::get('/informes/{informe}/clonar', [InformeController::class, 'clonar'])->name('informes.clonar');
+        Route::post('/informes/{informe}/clonar', [InformeController::class, 'procesarClon'])->name('informes.procesar-clon');
+        Route::get('/informes/reporte-comparativo', [InformeController::class, 'reporteComparativo'])->name('informes.reporte-comparativo');
+        Route::post('/informes/exportar-multiples-pdf', [InformeController::class, 'exportarMultiplesPdf'])->name('informes.exportar-multiples-pdf');
+        Route::get('/api/informes/estadisticas-avanzadas', [InformeController::class, 'estadisticasAvanzadas'])->name('informes.estadisticas-avanzadas');
+        
         // Resource completo de usuarios
         Route::resource('usuarios', UsuarioController::class);
     });
